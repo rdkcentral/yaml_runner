@@ -61,20 +61,22 @@ class YamlRunner():
         """Initiate a YamlRunner object
 
         Args:
-            program (str, optional): Program name. Defaults to None/
-            config (dict | io.IOBase | str, optional): Yaml connfiguration of commands that can be run. Defaults to None.
+            program (str, optional): Program name. Defaults to None
+            config (dict | io.IOBase | str, optional): Yaml connfiguration of commands that can be run.
+                Defaults to None. 
                 If None, config is expected to be passed in from command line with `--config` option.
         """
         self._arg_parser = None
         self._command_dict = None
         self._commands = None
+        self.command = None
         self._config = None
-        self._external_args = None
+        self._external_args = []
         self._remaining_args = None
         self._subparsers = None
         self._program = program
         self._set_config(config)
-        
+
 
     @property
     def config(self):
@@ -107,14 +109,12 @@ class YamlRunner():
         and then sets up parsers accordingly.
         
         Args:
-            config (dict|io.IOBase|str|None): Config file, path or dictionary. If None, config remains unset.
+            config (dict|io.IOBase|str|None): Config file, path or dictionary.
+                                                If None, config remains unset.
         """
         if isinstance(config,str):
-            try:
-                with open(config,'r',encoding='utf-8') as f:
-                    self._config = yaml.load(f,SafeLoader)
-            except FileNotFoundError:
-                raise
+            with open(config,'r',encoding='utf-8') as f:
+                self._config = yaml.load(f,SafeLoader)
         elif isinstance(config,io.IOBase):
             config.seek(0)
             self._config = yaml.load(config,SafeLoader)
@@ -208,7 +208,7 @@ class YamlRunner():
                 all_args.remove(unparsed_arg)
             arg_string = ' '.join(all_args)
         return arg_string
-    
+
     def _process_commands(self):
         """
         Sets up and runs argument parser with the commands found in the config.
@@ -255,7 +255,8 @@ class YamlRunner():
         Sets the self.command attribute with the command from the configuration and extra args passed in, as required.
 
         Raises:
-            SystemExit: If the help option is passed with the command. Prints the commands help message before exiting.
+            SystemExit: If the help option is passed with the command.
+                        Prints the commands help message before exiting.
         """
         passthrough=False
         self.command = self._command_dict.get('command')
@@ -298,20 +299,26 @@ class YamlRunner():
         """
         stdout_result = []
         stderr_result = []
-        proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
-        stdout_thread = threading.Thread(target=_read_stream, args=(proc.stdout, 'stdout', stdout_result))
-        stderr_thread = threading.Thread(target=_read_stream, args=(proc.stderr, 'stderr', stderr_result))
-        stdout_thread.start()
-        stderr_thread.start()
-        # Wait for the process to finish
-        return_code = proc.wait()
-        # Ensure threads finish reading and collect data
-        stdout_thread.join()
-        stdout = stdout_result[0]
-        stderr_thread.join()
-        stderr = stderr_result[0]
+        with subprocess.Popen(command,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                text=True,
+                                shell=True) as proc:
+            stdout_thread = threading.Thread(target=_read_stream,
+                                             args=(proc.stdout, 'stdout',stdout_result))
+            stderr_thread = threading.Thread(target=_read_stream,
+                                             args=(proc.stderr, 'stderr', stderr_result))
+            stdout_thread.start()
+            stderr_thread.start()
+            # Wait for the process to finish
+            return_code = proc.wait()
+            # Ensure threads finish reading and collect data
+            stdout_thread.join()
+            stdout = stdout_result[0]
+            stderr_thread.join()
+            stderr = stderr_result[0]
         return stdout, stderr, return_code
-    
+
     def _run_commands(self) -> tuple:
         """
         Runs a list of commands in the self.command attribute and returns the stdout, stderr, and exit
@@ -356,7 +363,7 @@ class YamlRunner():
         if args:
             self._external_args = args
         else:
-            # Store a copy of the arguments passed to the script, 
+            # Store a copy of the arguments passed to the script,
             # minus the actual script call
             self._external_args = sys.argv[1:].copy()
         # Process the args from the command line unrelated to the config

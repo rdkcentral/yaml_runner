@@ -33,4 +33,4 @@ from yaml_runner import YamlRunner
 
 if __name__ == '__main__':
     YAML_RUNNER = YamlRunner()
-    exit(YAML_RUNNER.run()[2][0])
+    sys.exit(YAML_RUNNER.run()[2][0])
