@@ -45,8 +45,6 @@ class YamlRunner():
         _arg_parser (argparse.ArgumentParser): The main argument parser for the script.
         _command_dict (dict, optional): The dictionary containing the configuration for the
             currently selected command. Defaults to None.
-        _commands (list, optional): A list containing the commands found in the configuration
-            file. Defaults to None.
         _config (dict, optional): The parsed YAML configuration data. Defaults to None.
         _external_args (list): A list containing all arguments passed to the script from the
             command line.
@@ -68,8 +66,7 @@ class YamlRunner():
         """
         self._arg_parser = None
         self._command_dict = None
-        self._commands = None
-        self.command = None
+        self.commands = None
         self._config = None
         self._external_args = []
         self._remaining_args = None
@@ -168,7 +165,6 @@ class YamlRunner():
             raise SystemExit(0)
         elif default_args.help:
             self._set_help_arg()
-        
 
     def _get_command_sections(self, parsed_config: dict) -> list:
         """
@@ -219,6 +215,7 @@ class YamlRunner():
             SystemExit: If the user has not supplied a valid command or has supplied the option for help,
               prints the help message diplaying the commands available and descriptions for them if available.
         """
+        commands = None
         command_dicts = self._get_command_sections(self._config)
         subparser = self.new_subparser(name='process_commands',help='Commands from config')
         command_choice_names = [command_dict.get('name') for command_dict in command_dicts]
@@ -234,8 +231,8 @@ class YamlRunner():
                                 dest='help',
                                 help='Show information about the command',
                                 default=False)
-        self._commands, self._remaining_args = subparser.parse_known_args(self._remaining_args)
-        if self._commands.command is None:
+        commands, self._remaining_args = subparser.parse_known_args(self._remaining_args)
+        if commands.command is None:
             help_message = subparser.format_help()
             choice_info = []
             for command_dict in command_dicts:
@@ -246,47 +243,55 @@ class YamlRunner():
             help_message = add_choices_to_help(help_message,'COMMAND',choice_info)
             print(help_message)
             raise SystemExit(0)
-        if self._commands.help:
+        if commands.help:
             self._set_help_arg()
-        self._command_dict = list(filter(lambda x: x.get('name') == self._commands.command, command_dicts))[0]
+        self._command_dict = list(filter(lambda x: x.get('name') == commands.command, command_dicts))[0]
 
-    def _process_command_params(self):
+    def _process_command_params(self, passthrough:bool=False, params:dict=None):
         """
-        Sets up and runs the argument parser based on the configuration for the command in self._command_dict.
-        Sets the self.command attribute with the command from the configuration and extra args passed in, as required.
+        Sets up and runs the argument parser for the selected command.
+        Sets the self.commands attribute to the command with parameters substituted into it.
 
         Raises:
             SystemExit: If the help option is passed with the command.
                         Prints the commands help message before exiting.
         """
+        subparser = self.new_subparser('command_params')
+        subparser.add_argument('-h', '--help', '--h',
+                                help='Show this information',
+                                action='store_true',
+                                dest='help')
+        if passthrough:
+            subparser.add_argument('passthrough',
+                                nargs='*',
+                                metavar='PASSTHROUGH',
+                                help='All arguments here will be passed into the command')
+        # TODO: Implement parameter substitution from parameters in config.
+        if params:
+            pass
+        command_params, _ = subparser.parse_known_args(self._remaining_args)
+        for index, command in enumerate(self.commands):
+            if '$@' in command:
+                self.commands[index] = command.replace('$@', ' '.join(self._remaining_args))
+        if command_params.help:
+            subparser.print_help()
+            raise SystemExit(0)
+
+    def _process_command_config(self):
+        """
+        This function processes the selected commands configuration,
+        setting the options of the commands parameters.
+        """
         passthrough=False
-        self.command = self._command_dict.get('command')
-        if isinstance(self.command,list) and len(self._remaining_args) != 0:
-            raise argparse.ArgumentTypeError('This command does not allow any arguments')
-        elif isinstance(self.command,list):
-            return
+        command = self._command_dict.get('command')
+        if isinstance(command,list):
+            self.commands = command
         else:
-            subparser = self.new_subparser(name='command_params')
-            subparser.add_argument('-h', '--help', '--h',
-                                    help='Show this information',
-                                    action='store_true',
-                                    dest='help')
-            if str(self.command).find('$@') > -1:
-                passthrough = True
-                subparser.add_argument('passthrough',
-                                    nargs='*',
-                                    metavar='PASSTHROUGH',
-                                    help='All arguments here will be passed into the command')
-            params =  self._command_dict.get('params')
-            # TODO: Implement parameter substitution from parameters in config.
-            if params:
-                pass
-            command_params, self._remaining_args = subparser.parse_known_args(self._remaining_args)
-            if command_params.help:
-                subparser.print_help()
-                raise SystemExit(0)
-            if passthrough:
-                self.command = self.command.replace('$@',' '.join(command_params.passthrough))
+            self.commands = [command]
+        if filter(lambda x: '$@' in x, self.commands):
+            passthrough=True
+        self._process_command_params(passthrough=passthrough, params=self._command_dict.get('params',None))
+
 
     def _run_command(self,command) -> tuple:
         """Runs a command in the shell, captures both stdout and stderr, 
@@ -322,22 +327,18 @@ class YamlRunner():
 
     def _run_commands(self) -> tuple:
         """
-        Runs a list of commands in the self.command attribute and returns the stdout, stderr, and exit
+        Runs a list of commands in the self.commands attribute and returns the stdout, stderr, and exit
         codes for each command.
         
         Returns:
             Returns a tuple containing three lists: `stdout_list`, `stderr_list`, and `exit_code_list`.
               Each list contains the respective outputs (stdout, stderr,
-              and exit code) of running the command(s) specified in the `self.command` attribute.
+              and exit code) of running the command(s) specified in the `self.commands` attribute.
         """
         stdout_list = []
         stderr_list = []
         exit_code_list = []
-        if isinstance(self.command,str):
-            commands = [self.command]
-        else:
-            commands = self.command
-        for command in commands:
+        for command in self.commands:
             stdout, stderr, exit_code = self._run_command(command)
             stdout_list.append(stdout)
             stderr_list.append(stderr)
@@ -357,7 +358,9 @@ class YamlRunner():
                 If None, external args are processed and used instead.
         
         Returns:
-          A tuple is being returned.
+            Returns a tuple containing three lists: `stdout_list`, `stderr_list`, and `exit_code_list`.
+              Each list contains the respective outputs (stdout, stderr,
+              and exit code) of running the command(s) specified in the `self.commands` attribute.
         """
         if config:
             self._set_config(config)
@@ -372,7 +375,7 @@ class YamlRunner():
         self._remaining_args = None
         self._get_pre_config_args()
         self._process_commands()
-        self._process_command_params()
+        self._process_command_config()
         return self._run_commands()
 
 
