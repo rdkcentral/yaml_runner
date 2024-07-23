@@ -21,4 +21,4 @@
 # *
 #* ******************************************************************************
 
-from .yaml_runner import YamlRunner
+from .yaml_runner import YamlRunner, add_choices_to_help

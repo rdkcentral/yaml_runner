@@ -57,7 +57,7 @@ class YamlRunner():
         _program (str): The name of the program as specified when creating the YamlRunner object.
     """
 
-    def __init__(self, program:str=None, config:dict|io.IOBase|str=None):
+    def __init__(self, program:str='', config:dict|io.IOBase|str=None):
         """Initiate a YamlRunner object
 
         Args:
@@ -75,6 +75,7 @@ class YamlRunner():
         self._remaining_args = None
         self._subparsers = None
         self._program = program
+        self._used_args = [self._program]
         self._set_config(config)
 
 
@@ -87,7 +88,7 @@ class YamlRunner():
     def config(self,config):
         self._set_config(config)
 
-    def new_subparser(self, help:str=None) -> argparse.ArgumentParser:
+    def new_subparser(self, name:str, help:str=None) -> argparse.ArgumentParser:
         """
         Create a new subparser with an optional help message.
         
@@ -97,11 +98,8 @@ class YamlRunner():
         Returns:
             An argparse.ArgumentParser instance.
         """
-        if self._get_used_args_string() is None:
-            name = self._program
-        else:
-            name = self._get_used_args_string()
-        subparser = self._subparsers.add_parser(name=name, add_help=False, help=help)
+        program = self._get_used_args_string()
+        subparser = self._subparsers.add_parser(name=name, add_help=False, help=help, prog=program)
         return subparser
 
     def _set_config(self, config:dict|io.IOBase|str|None) -> None:
@@ -140,7 +138,7 @@ class YamlRunner():
         Returns:
             The initial `argparse.ArgumentParser` object.
         """
-        parser = self.new_subparser()
+        parser = self.new_subparser(name='initial_args')
         # If config isn't already setup, expect it to be passed in from the command line.
         if self._config is None:
             parser.add_argument('-c', '--config',
@@ -170,6 +168,7 @@ class YamlRunner():
             raise SystemExit(0)
         elif default_args.help:
             self._set_help_arg()
+        
 
     def _get_command_sections(self, parsed_config: dict) -> list:
         """
@@ -206,7 +205,9 @@ class YamlRunner():
         if isinstance(self._remaining_args,list):
             for unparsed_arg in self._remaining_args:
                 all_args.remove(unparsed_arg)
-            arg_string = ' '.join(all_args)
+        difference = set(all_args).difference(set(self._used_args))
+        self._used_args += list(difference)
+        arg_string = ' '.join(self._used_args)
         return arg_string
 
     def _process_commands(self):
@@ -219,7 +220,7 @@ class YamlRunner():
               prints the help message diplaying the commands available and descriptions for them if available.
         """
         command_dicts = self._get_command_sections(self._config)
-        subparser = self.new_subparser(help='Commands from config')
+        subparser = self.new_subparser(name='process_commands',help='Commands from config')
         command_choice_names = [command_dict.get('name') for command_dict in command_dicts]
         subparser.add_argument('command',
                                 help='These are available commands found in the config',
@@ -245,7 +246,7 @@ class YamlRunner():
             help_message = add_choices_to_help(help_message,'COMMAND',choice_info)
             print(help_message)
             raise SystemExit(0)
-        elif self._commands.help:
+        if self._commands.help:
             self._set_help_arg()
         self._command_dict = list(filter(lambda x: x.get('name') == self._commands.command, command_dicts))[0]
 
@@ -265,7 +266,7 @@ class YamlRunner():
         elif isinstance(self.command,list):
             return
         else:
-            subparser = self.new_subparser()
+            subparser = self.new_subparser(name='command_params')
             subparser.add_argument('-h', '--help', '--h',
                                     help='Show this information',
                                     action='store_true',
