@@ -84,18 +84,18 @@ class BasicTest(unittest.TestCase):
             try:
                 stdout, stderr, exit_code = self.runner.run(**kwargs)
             except SystemExit as e:
-                exit_code = e.code
+                exit_code = [e.code]
                 self.stdout_log.seek(0)
                 self.stderr_log.seek(0)
-                stdout = self.stdout_log.read()
-                stderr = self.stderr_log.read()
+                stdout = [self.stdout_log.read()]
+                stderr = [self.stderr_log.read()]
         return stdout, stderr, exit_code
 
     def test_1_no_config(self):
         stdout, stderr, exit_code = self._run_yaml_runner(args=['--help'])
-        self.assertEqual(exit_code, 2, 'Test the exit code is zero')
-        self.assertIn('-c', stderr, 'Test the -c option is in the stderr')
-        self.assertIn('--config', stderr, 'Test the --config option is in the stderr')
+        self.assertEqual(exit_code[0], 2, 'Test the exit code is zero')
+        self.assertIn('-c', stderr[0], 'Test the -c option is in the stderr')
+        self.assertIn('--config', stderr[0], 'Test the --config option is in the stderr')
 
     def test_2_help_with_config(self):
         for config_type, config in self.test_configs.items():
@@ -103,20 +103,20 @@ class BasicTest(unittest.TestCase):
 
     def _test_help_with_config(self, config, config_type):
         stdout, stderr, exit_code = self._run_yaml_runner(config=config, args=['--help'])
-        self.assertEqual(exit_code, 0, f'Test the exit code is zero [{config_type}]')
-        self.assertIn('COMMAND', stdout, f'Test COMMAND is in the output [{config_type}]')
+        self.assertEqual(exit_code[0], 0, f'Test the exit code is zero [{config_type}]')
+        self.assertIn('COMMAND', stdout[0], f'Test COMMAND is in the output [{config_type}]')
         self.assertIn('hello_world',
-                      stdout,
+                      stdout[0],
                       f'Test the hello_world choice is in the output [{config_type}]')
         self.assertIn('print hello world in stdout',
-                      stdout,
+                      stdout[0],
                       f'Test the description of hello_world is in the output [{config_type}]')
         self.assertIn('echo_all',
-                      stdout,
+                      stdout[0],
                       f'Test the echo_all choice is in the output [{config_type}]')
-        self.assertIn('-h', stdout, f'Test the -h option is in the output [{config_type}]')
-        self.assertIn('--help', stdout, f'Test the --help option is in the output [{config_type}]')
-        self.assertEqual(stderr, '', f'Test the stderr is empty [{config_type}]')
+        self.assertIn('-h', stdout[0], f'Test the -h option is in the output [{config_type}]')
+        self.assertIn('--help', stdout[0], f'Test the --help option is in the output [{config_type}]')
+        self.assertEqual(stderr[0], '', f'Test the stderr is empty [{config_type}]')
 
     def test_3_hello_world(self):
         for config_type, config in self.test_configs.items():
@@ -137,16 +137,16 @@ class BasicTest(unittest.TestCase):
     def _test_echo_all(self, config, config_type):
         stdout, stderr, exit_code = self._run_yaml_runner(config=config,
                                                           args=['echo_all', '--help'])
-        self.assertEqual(exit_code, 0, f'Test the exit code is zero [{config_type}]')
+        self.assertEqual(exit_code[0], 0, f'Test the exit code is zero [{config_type}]')
         self.assertIn('echo_all',
-                      stdout,
+                      stdout[0],
                       f'Test the echo_all choice is in the output [{config_type}]')
         self.assertIn('PASSTHROUGH',
-                      stdout,
+                      stdout[0],
                       f'Test PASTHROUGH is shown as a optional argument [{config_type}]')
-        self.assertIn('-h', stdout, f'Test the -h option is in the output [{config_type}]')
-        self.assertIn('--help', stdout, f'Test the --help option is in the output [{config_type}]')
-        self.assertEqual(stderr, '', f'Test the stderr is empty [{config_type}]')
+        self.assertIn('-h', stdout[0], f'Test the -h option is in the output [{config_type}]')
+        self.assertIn('--help', stdout[0], f'Test the --help option is in the output [{config_type}]')
+        self.assertEqual(stderr[0], '', f'Test the stderr is empty [{config_type}]')
 
     def test_5_echo_all_with_passthrough_arg(self):
         for config_type, config in self.test_configs.items():
