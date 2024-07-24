@@ -13,9 +13,9 @@ pip install git+https://github.com/rdkcentral/yaml_runner.git@master
 
 ## Usage
 
-The simplest usages for this library is to use it to run it in a main function. See [yaml_runner_run.py](examples/yaml_runner_run.py)
+The easiest way of using this library is to run it in a main function. See [yaml_runner_run.py](examples/yaml_runner_run.py)
 
-However, for more advanced usage this library can be extended. The simplest way to do this is to inherit it in a class and extend it there.
+This library can also be extended for more advanced usages. The easiest way is to inherit it in a class and extend it there.
 
 ## Documentation
 

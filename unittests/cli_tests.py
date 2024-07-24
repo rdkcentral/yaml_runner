@@ -20,6 +20,28 @@
 # * limitations under the License.
 # *
 #* ******************************************************************************
+"""CLITest unit tests for the yaml_runner script.
+
+This module contains unit tests for the `yaml_runner` script, which is
+expected to be located at `../examples/yaml_runner_run.py` relative to this
+test script. The tests also rely on a sample configuration file
+`test_config.yml` located at the same path.
+
+The tests verify the behavior of the script in the following scenarios:
+
+* Running the script without arguments prints the help message and mentions
+  the required `-c` or `--config` option for specifying the configuration file.
+* Running the script with the `--help` option and a valid configuration file
+  prints the script's usage information, including available choices and
+  descriptions.
+* Running the script with the `--config` option and a valid configuration file
+  followed by a valid choice name (e.g., `hello_world`) executes the corresponding
+  function and prints the expected output.
+* Running the script with the `--config` option, a valid choice name supporting
+  optional arguments (e.g., `echo_all`), and the `--help` option prints the specific
+  usage information for that choice.
+"""
+
 
 from os import path
 import subprocess
@@ -29,10 +51,15 @@ MY_PATH = path.abspath(__file__)
 MY_DIR = path.dirname(MY_PATH)
 
 class CLITest(unittest.TestCase):
+    """Test class for the yaml_runner script."""
     yaml_runner_script = path.join(MY_DIR, '../examples/yaml_runner_run.py')
     test_config_path = path.join(MY_DIR, '../examples/test_config.yml')
 
     def test_1_no_config(self):
+        """
+        Tests that running the script without arguments prints the help message
+        and mentions the required configuration file option.
+        """
         result_no_args = subprocess.run(self.yaml_runner_script,
                                         shell=True,
                                         text=True,
@@ -54,6 +81,10 @@ class CLITest(unittest.TestCase):
                       'Test the --config option is in the stderr')
 
     def test_2_help_with_config(self):
+        """
+        Tests that running the script with --help and a valid configuration file
+        prints the script's usage information.
+        """
         result = subprocess.run(f'{self.yaml_runner_script} --config {self.test_config_path} --help',
                                  shell=True,
                                 text=True,
@@ -72,6 +103,10 @@ class CLITest(unittest.TestCase):
         self.assertEqual(result.stderr, '', 'Test the stderr is empty')
 
     def test_3_hello_world(self):
+        """
+        Tests that running the script with a valid choice name executes
+        the corresponding function and prints the expected output.
+        """
         result = subprocess.run(f'{self.yaml_runner_script} --config {self.test_config_path} hello_world',
                                 shell=True,
                                 text=True,
@@ -83,6 +118,10 @@ class CLITest(unittest.TestCase):
         self.assertEqual(result.stderr, '', 'Test the stderr is empty')
 
     def test_4_echo_all_help(self):
+        """
+        Tests that running the script with a choice supporting optional arguments
+        and --help prints the specific usage information for that choice.
+        """
         result = subprocess.run(f'{self.yaml_runner_script} --config {self.test_config_path} echo_all --help',
                                 shell=True,
                                 text=True,
