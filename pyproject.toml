@@ -2,7 +2,7 @@
 name = "yaml_runner"
 version = "1.0.0"
 dependencies = [
-    "PyYaml==6.0",
+    "PyYaml>=6.0",
 ]
 [tool.setuptools.packages.find]
 include = ["yaml_runner"]
