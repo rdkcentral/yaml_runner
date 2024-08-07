@@ -148,8 +148,7 @@ class YamlRunner():
                                     help='Show information about the command',
                                     dest='help',
                                     action='store_true',
-                                    default=False
-                                    )
+                                    default=False)
         return parser
 
     def _get_pre_config_args(self):
@@ -224,8 +223,7 @@ class YamlRunner():
                                 choices=command_choice_names,
                                 nargs='?',
                                 default=None,
-                                metavar='COMMAND'
-                                )
+                                metavar='COMMAND')
         subparser.add_argument('-h', '--help', '--h',
                                 action='store_true',
                                 dest='help',
