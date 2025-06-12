@@ -5,6 +5,9 @@ dependencies = [
     "PyYaml>=6.0",
 ]
 [tool.setuptools.packages.find]
-include = ["yaml_runner"]
+include = ["yaml_runner", "yaml_runner.engines"]
 where = ["src"]
 namespaces = false
+
+[project.scripts]
+yaml_runner = "yaml_runner.cli:main"
