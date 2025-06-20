@@ -4,7 +4,7 @@
 Yaml Runner is a command-line interface to run commands stored in a yaml file.
 
 
-## Installatation
+## Installation
 Python 3.10 or above is required by yaml_runner.
 
 ```
@@ -24,7 +24,7 @@ See the [yaml_runner module reference](./docs/reference/yaml_runner.md) for more
 ## Documentation
 
 ### Quick Start
-* Follow the [installation instructions](#installatation) above.
+* Follow the [installation instructions](#installation) above.
 * Create an `example_config.yml` file.
 * Follow the examples in [command_definitions.md](./docs/command_definitions.md#examples-of-command-definitions)
 > *Don't forget `--help` can be used with any config to show the commands available and their parameters.*
@@ -32,7 +32,8 @@ See the [yaml_runner module reference](./docs/reference/yaml_runner.md) for more
 #### Example configs
 Example configs that are runnable with yaml_runner are available below:
 * [Simple commands config](./examples/simple_config.yml)
-* [Hierarchical commands config](./exam)
+* [Hierarchical commands config](./examples/hierarchical_config.yml)
+* [Fail fast commands config](./examples/fail_fast_config.yml)
 
 ### Reference
 * [Command Definitions](./docs/command_definitions.md)
