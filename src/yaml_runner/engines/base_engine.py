@@ -76,7 +76,7 @@ class BaseYamlRunnerEngine(ABC):
         Recursive function to extract the command sections from a dictionary.
         
         Args:
-        parsed_config (dict): Dictionary containing command configiguration data.
+        parsed_config (dict): Dictionary containing command configuration data.
         
         Returns:
         A list of dictionaries containing command sections from the parsed configuration. Each
@@ -108,14 +108,15 @@ class BaseYamlRunnerEngine(ABC):
                                 metavar='ARGUMENTS')
 
     def _build_commands(self, commands:list[str], cli_args: dict) -> list[str]:
-        """_summary_
+        """Build the commands from the command string listed, substituting in
+        the command line arguments where required.
 
         Args:
-            commands (list[str]): _description_
-            cli_args (dict): _description_
+            commands (list[str]): Command string from the config section.
+            cli_args (dict): Command line args.
 
         Returns:
-            list[str]: _description_
+            list[str]: List of command to be run with command line arguments substituted in.
         """
         if 'passthrough' in cli_args.keys():
             for index,command in enumerate(commands):

@@ -48,9 +48,12 @@ class cli():
         except SystemExit as e:
             parser.print_help()
             raise
+
         if pathlib.Path(cli_args.config[0]).exists():
             with open(cli_args.config[0],'r',encoding='utf-8') as cfg_file:
                 cfg = yaml.load(cfg_file,SafeLoader)
+            if cfg is None:
+                raise RuntimeError(f'File {cli_args.config[0]} is empty.')
             yr_config = cfg.pop('yaml_runner',{})
             yr_settings = self._get_yr_settings(yr_config)
             yr = YamlRunner(cfg,

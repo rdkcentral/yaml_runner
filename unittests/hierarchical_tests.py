@@ -20,6 +20,22 @@
 # * limitations under the License.
 # *
 #* ******************************************************************************
+"""CLITest unit tests for the yaml_runner script.
+
+This module contains unit tests for `yaml_runner`.
+The tests also rely on a configuration file
+`examples/hierarchical_config.yml`.
+
+The tests verify the behavior of the script in the following scenarios:
+
+* Running the script with the --config option and --help confirms that the hierarchical engine
+is used to parse the configuration, and only valid commands (e.g., run) are exposed.
+(Test: test_1_check_hierarchical_engine_is_used)
+
+* Running the script with the --config option and a nested command sequence
+(e.g., run example nested) executes the correct nested command and prints the expected output.
+(Test: test_2_check_nesting)
+"""
 
 from os import path
 import subprocess
@@ -56,10 +72,10 @@ class HierarchicalCLITest(CLITest):
                          'Test the description for run is shown.')
         self.assertNotIn('unrecognised',
                          help_dict.get('positionals',{}).keys(),
-                         'Test that unregonised has not been parse as a positional')
+                         'Test that unrecognised has not been parsed as a positional')
         self.assertNotIn('unrecognised_nested',
                          help_dict.get('positionals',{}).keys(),
-                         'Test that unregonised has not been parse as a positional')
+                         'Test that unrecognised has not been parsed as a positional')
 
     def test_2_check_nesting(self):
         """

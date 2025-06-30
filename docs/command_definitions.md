@@ -1,13 +1,12 @@
-
 # Command Definitions
 All keys that have a command field directly under them will be treated as a command definition by yaml_runner.<br>
-The value of the command key is expect to be a string or a list of commands to be run when the parent key is called through yaml_runner.
+The value of the command key is expected to be a string or a list of commands to be run when the parent key is called through yaml_runner.
 > *Some of the behaviors of the commands can be altered by settings in the [global configuration](./global_configuration.md).*
 
 ## Optional Keys
 Optionally the below keys can be included to a command section:
 - **description**: The value of this key will be shown as the help message for the command when `--help` is used with yaml runner.
-- **params**: This section allow parameters to be defined for the command.
+- **params**: This section allows parameters to be defined for the command.
   - **passthrough**: If true, then all arguments following the yaml_runner command will be substituted into the command string/s in place of the `$@`.
     > *This is currently the only parameter supported. An example for it can be found [here](#command-with-passthrough-arguments).*
 

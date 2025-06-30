@@ -8,7 +8,7 @@ Below are the currently supported options of the global configuration of yaml_ru
 - [`hierarchical`](#example-of-hierarchical-command-behaviour): If true, nested keys are treated as subcommands, requiring full paths to execute them.
   - Default is false.
 
-## Example for the global configuration section of a config, with the default settings.
+## Example of a global configuration section using default settings.
 ```yaml
 yaml_runner:
   fail_fast: true
@@ -54,7 +54,7 @@ run:
 `yaml_runner run example nested`
 
 **If hierarchical is true**<br>
-`This is a nested command` should be printed in the console.
+`This is the nested command` should be printed in the console.
 
 **If hierarchical is false**<br>
 yaml_runner should print a message stating that `run` is an invalid choice, showing that the valid command is `nested`.

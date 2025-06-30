@@ -20,6 +20,22 @@
 # * limitations under the License.
 # *
 #* ******************************************************************************
+"""CLITest unit tests for the yaml_runner script.
+
+This module contains unit tests for `yaml_runner`.
+The tests also rely on a configuration file
+`examples/fail_fast_config.yml`.
+
+The tests verify the behavior of the script in the following scenarios:
+
+* Running the script with the --config option and the list command
+executes all commands in the list sequentially, confirming correct order and output.
+(Test: test_1_check_list_command)
+
+* Running the script with the --config option and the list_failure command
+continues executing subsequent commands even after a failure, as fail_fast is disabled.
+(Test: test_2_check_list_failure)
+"""
 
 from os import path
 import subprocess

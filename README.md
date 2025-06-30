@@ -14,7 +14,7 @@ pip install git+https://github.com/rdkcentral/yaml_runner.git@master
 ## Usage
 
 ### CLI Usage
-Once pip installed the `yaml_runner` command will be available. This command will required a config to specific following the `-c` option.<br>
+Once pip installed the `yaml_runner` command will be available. This command will require a config to specific following the `-c` option.<br>
 See the [Quick Start Section](#quick-start) below for more information.
 
 ### Library Usage

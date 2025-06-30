@@ -78,6 +78,11 @@ class HierarchicalEngine(BaseYamlRunnerEngine):
         """
         Recursively sets up subparsers for the nested commands in the dict.
 
+        Sets up subparser for the top keys in the dict. If a command is found under the key
+        the commands params are added to the subparser. Otherwise, the nested dict is passed
+        into the next call of this functions. The key 'description' is ignored, to prevent
+        the description of a subcommand from being added as a subcommand itself.
+
         Args:
             nested_cmds (dict): Dictionary of nested commands.
             subparsers (argparse._SubParsersAction): The main argument parsers subparser object.
