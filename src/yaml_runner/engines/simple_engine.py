@@ -47,7 +47,7 @@ class SimpleEngine(BaseYamlRunnerEngine):
         _arg_parser (argparse.ArgumentParser): The main argument parser for the script.
     """
 
-    def _process_arguments(self, args: list[str]):
+    def _setup_parsers(self):
         command_dicts = self._get_command_sections(self._config)
         subparsers = self._arg_parser.add_subparsers(dest='command_name',
                                                      required=True)
@@ -57,5 +57,3 @@ class SimpleEngine(BaseYamlRunnerEngine):
                                                    help=command_dict.get('description',''))
             if params:
                 self._add_params_parser(command_parser, params)
-        parsed_args = self._arg_parser.parse_args(args)
-        return vars(parsed_args)

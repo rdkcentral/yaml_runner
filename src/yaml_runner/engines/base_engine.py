@@ -57,19 +57,31 @@ class BaseYamlRunnerEngine(ABC):
         pass
 
     @abstractmethod
-    def _process_arguments(self, args: list[str]) -> dict:
+    def _setup_parsers(self):
         """
-        Sets up and runs argument parser/s for each command section
-        found in the config. Returning the namespace object from the parsed
-        arguments as a dictionary.
+        Sets up the argument parser/s for each command section
+        found in the config.
+        """
+        pass
+
+    def _process_arguments(self,args: list[str]) -> dict:
+        """Runs the argument parsers and ensures passthrough
+            params are processed properly.
 
         Args:
-            args (list[str]): Unparsed arguments in a list.
+            args (list[str]): Commands line arguments to process.
 
         Returns:
             dict: Dictionary of arguments and their values.
         """
-        pass
+        self._setup_parsers()
+        parsed_args, remaining = self._arg_parser.parse_known_args(args)
+        parsed_args_dict = vars(parsed_args)
+        if 'passthrough' in parsed_args_dict.keys():
+            parsed_args_dict['passthrough'] = remaining + parsed_args_dict.get('passthrough',[])
+        elif remaining:
+            self._arg_parser.error(f'unrecognized arguments: {" ".join(remaining)}')
+        return parsed_args_dict
 
     def _get_command_sections(self, parsed_config: dict) -> list[str]:
         """

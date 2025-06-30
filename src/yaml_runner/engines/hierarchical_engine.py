@@ -66,14 +66,12 @@ class HierarchicalEngine(BaseYamlRunnerEngine):
                 command_dicts.pop(key)
         return command_dicts
 
-    def _process_arguments(self, args: list[str]) -> dict:
+    def _setup_parsers(self):
         command_dicts = self._strip_config(self._config)
         subparsers = self._arg_parser.add_subparsers(dest='command_name',
                                                      required=True)
         self._setup_subparsers(command_dicts, subparsers)
-        parsed_args = self._arg_parser.parse_args(args)
-        return vars(parsed_args)
-    
+
     def _setup_subparsers(self, nested_cmds:dict, subparsers: argparse._SubParsersAction):
         """
         Recursively sets up subparsers for the nested commands in the dict.
