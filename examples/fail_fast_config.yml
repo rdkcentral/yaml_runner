@@ -20,14 +20,27 @@
 # *
 #* ******************************************************************************
 
-# Since there is no command under this, this key will be ignored by yaml_runner
+# The yaml_runner section in a config is used to configure
+# the yaml_runner engine, when using the cli.
+yaml_runner:
+  # By default if a command a command list returns a non-zero exit code,
+  # the rest of the commands in the list will not be run.
+  # If fail_fast is set to false, all commands will be run regardless.
+  fail_fast: false
+
 run:
-  # As this key has a command under it, it will be used by yaml_runner
-  hello_world:
-    # This is the command that will be run by yaml_runner if hello_world is passed as an argument by the user
-    command: echo "hello world"
-    # This description is optional and will be displayed in the help message for hello_world by yaml_runner
-    description: print hello world in stdout
-  echo_all:
-    # The $@ here means that all arguments passed after echo_all will be appended to the command before it is run
-    command: echo $@
+  list:
+    description: Run each command listed in the command.
+    # All commands here should be run successfully.
+    command:
+      - echo "echo 1"
+      - echo "echo 2"
+      - echo "echo 3"
+      - echo "echo 4"
+  list_failure:
+    description: Run each command listed, continuing after failing the second.
+    command:
+      - echo "echo 1"
+      - this_isnt_a_real_command # This command should fail.
+      - echo "echo 3"
+      - echo "echo 4"
