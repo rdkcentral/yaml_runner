@@ -1,0 +1,63 @@
+#** *****************************************************************************
+# *
+# * If not stated otherwise in this file or this component's LICENSE file the
+# * following copyright and licenses apply:
+# *
+# * Copyright 2024 RDK Management
+# *
+# * Licensed under the Apache License, Version 2.0 (the "License");
+# * you may not use this file except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *
+# http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *
+#* ******************************************************************************
+
+# Since there is no command under the run key, this key will be ignored by yaml_runner
+run:
+  # As the hello_world key has a command under it, it will be used by yaml_runner
+  hello_world:
+    # Below is the command that will be run by yaml_runner if hello_world is passed as an argument by the user
+    command: echo "hello world"
+    # This description is optional and will be displayed in the help message for hello_world by yaml_runner
+    description: Print hello world in stdout.
+  echo_passthrough:
+    description: Print all arguments passed after echo_passthrough.
+    command: echo $@
+    params:
+      # As the passthrough param has been set to true here
+      # the $@ in the command will substituted for all passed args after echo_passthrough
+      passthrough: true
+  list:
+    description: Run each command listed in the command.
+    # As the command is a list, each command here will be run individually, in sequence.
+    command:
+      - echo "echo 1"
+      - echo "echo 2"
+      - echo "echo 3"
+      - echo "echo 4"
+  list_passthrough:
+    description: Run each command listed, substituting the extra args in.
+    # As above, since passthrough is set to True all $@ will be replaced with all arguments
+    # following list_passthrough
+    command:
+      - echo "echo 1"
+      - echo "$@"
+      - echo "echo 2"
+      - echo "$@"
+    params:
+      passthrough: true
+  fail_fast:
+    description: Run each command listed, stopping at the third command.
+    command:
+      - echo "echo 1"
+      - echo "echo 2"
+      - this_isnt_a_real_command # Since this isn't a real command it should fail
+      - echo "echo 4" # This command shouldn't be run, because of the failure before.
