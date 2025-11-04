@@ -54,6 +54,7 @@ class SimpleEngine(BaseYamlRunnerEngine):
         for command_dict in command_dicts:
             params = command_dict.get('params')
             command_parser = subparsers.add_parser(command_dict.get('name'),
-                                                   help=command_dict.get('description',''))
+                                                   help=command_dict.get('description',''),
+                                                   formatter_class=self._formatter)
             if params:
                 self._add_params_parser(command_parser, params)

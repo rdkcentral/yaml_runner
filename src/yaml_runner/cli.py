@@ -31,8 +31,7 @@ try:
 except ImportError:
     from yaml import SafeLoader
 
-sys.path.append('/home/ubuntu/TEST/test-python/yaml_runner/worktrees/hierarchical_yaml/')
-from src import YamlRunner
+from yaml_runner import YamlRunner
 
 class cli():
     def __init__(self):

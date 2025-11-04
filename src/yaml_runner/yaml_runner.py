@@ -44,11 +44,12 @@ class YamlRunner():
     parsers, allowing the commands from the yaml to be executed..
     """
 
-    def __init__(self, 
-                 config:dict|io.IOBase|str, 
+    def __init__(self,
+                 config:dict|io.IOBase|str,
                  program:str='',
-                 hierarchical: bool=False, 
-                 fail_fast=True):
+                 hierarchical: bool=False,
+                 fail_fast=True,
+                 arg_parse_formatter:argparse.HelpFormatter=argparse.HelpFormatter):
         """Initiate a YamlRunner object
 
         Args:
@@ -60,9 +61,13 @@ class YamlRunner():
 
         """
         if hierarchical:
-            self._engine = HierarchicalEngine(self._config_to_dict(config), program=program)
+            self._engine = HierarchicalEngine(self._config_to_dict(config),
+                                              program=program,
+                                              formatter=arg_parse_formatter)
         else:
-            self._engine = SimpleEngine(self._config_to_dict(config), program=program)
+            self._engine = SimpleEngine(self._config_to_dict(config),
+                                        program=program,
+                                        formatter=arg_parser_formatter)
         self._program = program
         self._fail_fast = fail_fast
         self.config = config
@@ -104,7 +109,7 @@ class YamlRunner():
 
 
     def _run_command(self,command) -> tuple:
-        """Runs a command in the shell, captures both stdout and stderr, 
+        """Runs a command in the shell, captures both stdout and stderr,
         prints them in real-time, and returns them.
 
         Args:
@@ -139,7 +144,7 @@ class YamlRunner():
         """
         Runs a list of commands in the self.commands attribute and returns the stdout, stderr, and exit
         codes for each command.
-        
+
         Returns:
             Returns a tuple containing three lists: `stdout_list`, `stderr_list`, and `exit_code_list`.
               Each list contains the respective outputs (stdout, stderr,
@@ -162,13 +167,13 @@ class YamlRunner():
         """
         This function runs a script with specified configuration and arguments, processing command line
         arguments and executing commands.
-        
+
         Args:
             config (dict|io.IOBase|str): Yaml configuration of commands that can be run. Defaults to None.
                 If None, config is expected to be passed in from command line with `--config` option.
-            args (list): The arguments passed to the script. Defaults to None. 
+            args (list): The arguments passed to the script. Defaults to None.
                 If None, external args are processed and used instead.
-        
+
         Returns:
             tuple: Returns a tuple containing three lists: `stdout_list`, `stderr_list`, and `exit_code_list`.
               Each list contains the respective outputs (stdout, stderr,
@@ -182,11 +187,11 @@ class YamlRunner():
 def _read_stream(stream:io.IOBase, target:str, result_list:list):
     """Read data from a stream and writes it to either stdout or stderr whilst also
     capturing the data.
-    
+
     Args:
         stream (io.IOBase): Stream object from which data will be read.
         target (str): Where the output from the stream should be directed. Either 'stdout' or 'stderr'
-        result_list (list): The list that will store the data read from the stream. 
+        result_list (list): The list that will store the data read from the stream.
             Each chunk of data read from the stream will be appended to this list.
     """
     data = ''

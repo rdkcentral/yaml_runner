@@ -26,11 +26,13 @@ import argparse
 
 class BaseYamlRunnerEngine(ABC):
 
-    def __init__(self, config, program: str=''):
+    def __init__(self, config, formatter:argparse.HelpFormatter, program: str=''):
         self._config = {}
         if config:
             self.config = config
-        self._arg_parser = argparse.ArgumentParser(prog=program)
+        self._formatter = formatter
+        self._arg_parser = argparse.ArgumentParser(prog=program,
+                                                   formatter_class=self._formatter)
 
     @property
     def config(self):

@@ -89,7 +89,8 @@ class HierarchicalEngine(BaseYamlRunnerEngine):
             if key == 'description':
                 continue
             command_parser = subparsers.add_parser(key,
-                                    help=value.get('description',''))
+                                    help=value.get('description',''),
+                                    formatter_class=self._formatter)
             if value.get('command'):
                 params = value.get('params')
                 if params:
