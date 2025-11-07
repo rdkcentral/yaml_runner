@@ -58,16 +58,18 @@ class YamlRunner():
             hierarchical (bool, Optional): Process the yaml hierarchically. Defaults to False.
             fail_fast (bool, Optional): Prevent command list from continuing after a command has failed.
                                         Defaults to True.
+            arg_parse_formatter (argparse.HelpFormatter): Allows the argparse.HelpFormatter used in the yaml_runner
+                                                          object to be overridden. Defaults to argparse.HelpFormatter.
 
         """
         if hierarchical:
             self._engine = HierarchicalEngine(self._config_to_dict(config),
-                                              program=program,
-                                              formatter=arg_parse_formatter)
+                                              formatter=arg_parse_formatter,
+                                              program=program)
         else:
             self._engine = SimpleEngine(self._config_to_dict(config),
-                                        program=program,
-                                        formatter=arg_parser_formatter)
+                                        formatter=arg_parse_formatter,
+                                        program=program)
         self._program = program
         self._fail_fast = fail_fast
         self.config = config
