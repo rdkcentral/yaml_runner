@@ -48,7 +48,8 @@ class YamlRunner():
                  config:dict|io.IOBase|str, 
                  program:str='',
                  hierarchical: bool=False, 
-                 fail_fast=True):
+                 fail_fast=True,
+                 parser_class:type[argparse.ArgumentParser]=argparse.ArgumentParser):
         """Initiate a YamlRunner object
 
         Args:
@@ -60,9 +61,13 @@ class YamlRunner():
 
         """
         if hierarchical:
-            self._engine = HierarchicalEngine(self._config_to_dict(config), program=program)
+            self._engine = HierarchicalEngine(self._config_to_dict(config),
+                                              parser_class=parser_class,
+                                              program=program)
         else:
-            self._engine = SimpleEngine(self._config_to_dict(config), program=program)
+            self._engine = SimpleEngine(self._config_to_dict(config),
+                                        parser_class=parser_class,
+                                        program=program)
         self._program = program
         self._fail_fast = fail_fast
         self.config = config
