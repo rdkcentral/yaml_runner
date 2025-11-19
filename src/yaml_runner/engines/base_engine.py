@@ -26,7 +26,9 @@ import argparse
 
 class BaseYamlRunnerEngine(ABC):
 
-    def __init__(self, config, parser_class:type[argparse.ArgumentParser], program: str=''):
+    def __init__(self, config,
+                 parser_class:type[argparse.ArgumentParser]=argparse.ArgumentParser,
+                 program: str=''):
         self._config = {}
         if config:
             self.config = config
