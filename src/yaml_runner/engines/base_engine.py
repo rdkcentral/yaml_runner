@@ -142,6 +142,8 @@ class BaseYamlRunnerEngine(ABC):
             for func_name in matches:
                 if func_name in self._functions:
                     func_command = self._functions[func_name].get('command', '')
+                    # Strip leading/trailing whitespace and normalize newlines for inline use
+                    func_command = func_command.strip()
                     commands[index] = commands[index].replace(f'{{{{{func_name}}}}}', func_command)
         
         # Then handle passthrough arguments
