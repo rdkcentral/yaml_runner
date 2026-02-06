@@ -15,6 +15,9 @@ NC='\033[0m'
 
 echo -e "${GREEN}Running yaml_runner tests...${NC}\n"
 
+# Ensure package is available for tests by adding src to PYTHONPATH
+export PYTHONPATH="${SCRIPT_DIR}/src:${PYTHONPATH}"
+
 # Run all unit tests
 echo -e "${YELLOW}Running unit tests...${NC}"
 python3 -m unittest discover -s unittests -p "*tests.py" -v

@@ -3,6 +3,9 @@
 
 description: Example config with reusable functions
 
+yaml_runner:
+  hierarchical: true
+
 functions:
   simple_echo:
     description: Simple single-line function
@@ -28,27 +31,28 @@ functions:
 
 test_simple:
   description: Test simple function substitution
-  command: {{simple_echo}}
+  command: "{{simple_echo}}"
 
 test_inline:
   description: Test function substituted inline with other commands
-  command: echo "Before" && {{simple_echo}} && echo "After"
+  command: "echo \"Before\" && {{simple_echo}} && echo \"After\""
 
 test_pipeline:
   description: Test function in a pipeline
-  command: echo '{"status":"success"}' | {{json_formatter}}
+  command: "echo '{\"status\":\"success\"}' | {{json_formatter}}"
 
 test_multiline:
   description: Test multi-line function
-  command: {{multiline_script}}
+  command: "{{multiline_script}}"
 
 test_combined:
   description: Test multiple functions in one command
-  command: echo "test" | {{grep_filter}} && {{simple_echo}}
+  command: "echo \"success test\" | {{grep_filter}} && {{simple_echo}}"
 
 nested:
   description: Nested commands with functions
   
   child:
     description: Child command using function
-    command: {{simple_echo}} && echo "Child done"
+    command: "{{simple_echo}} && echo \"Child done\""
+
