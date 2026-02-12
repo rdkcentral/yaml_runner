@@ -23,6 +23,7 @@
 
 from abc import ABC,abstractmethod
 import argparse
+import re
 
 class BaseYamlRunnerEngine(ABC):
 
@@ -30,6 +31,7 @@ class BaseYamlRunnerEngine(ABC):
                  parser_class:type[argparse.ArgumentParser]=argparse.ArgumentParser,
                  program: str=''):
         self._config = {}
+        self._functions = {}
         if config:
             self.config = config
         self._arg_parser = parser_class(prog=program)
@@ -43,6 +45,7 @@ class BaseYamlRunnerEngine(ABC):
     def config(self,config: dict):
         if isinstance(config,dict):
             self._config = config
+            self._functions = config.get('functions', {})
         else:
             raise TypeError('Expected config as type: dict')
 
@@ -132,6 +135,18 @@ class BaseYamlRunnerEngine(ABC):
         Returns:
             list[str]: List of command to be run with command line arguments substituted in.
         """
+        # First handle template substitution for functions
+        template_pattern = r'\{\{(\w+)\}\}'
+        for index, command in enumerate(commands):
+            matches = re.findall(template_pattern, command)
+            for func_name in matches:
+                if func_name in self._functions:
+                    func_command = self._functions[func_name].get('command', '')
+                    # Strip leading/trailing whitespace and normalize newlines for inline use
+                    func_command = func_command.strip()
+                    commands[index] = commands[index].replace(f'{{{{{func_name}}}}}', func_command)
+        
+        # Then handle passthrough arguments
         if 'passthrough' in cli_args.keys():
             for index,command in enumerate(commands):
                 cli_arg_string = ' '.join(cli_args.get('passthrough',[]))
@@ -148,4 +163,4 @@ class BaseYamlRunnerEngine(ABC):
                 command_strings = [command_strings]
             return self._build_commands(command_strings,parsed_args)
         else:
-            raise RuntimeError('No command was given, although it was required')
+            return []

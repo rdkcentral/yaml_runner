@@ -3,3 +3,7 @@
 *.vscode*
 *build*
 *.egg*
+.coverage
+**/*,cover
+htmlcov/
+.pytest_cache/

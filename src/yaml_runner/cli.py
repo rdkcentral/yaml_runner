@@ -24,6 +24,7 @@
 import argparse
 import pathlib
 import sys
+from os import path
 
 import yaml
 try:
@@ -31,8 +32,18 @@ try:
 except ImportError:
     from yaml import SafeLoader
 
-sys.path.append('/home/ubuntu/TEST/test-python/yaml_runner/worktrees/hierarchical_yaml/')
-from src import YamlRunner
+# When running as script, need to handle imports properly
+if __name__ == '__main__' and __package__ is None:
+    # Add src directory to path
+    sys.path.insert(0, path.dirname(path.dirname(path.abspath(__file__))))
+    # Set package name for relative imports to work
+    __package__ = 'yaml_runner'
+
+# Now do the import - will use relative imports within yaml_runner package
+if __package__:
+    from .yaml_runner import YamlRunner
+else:
+    from yaml_runner import YamlRunner
 
 class cli():
     def __init__(self):

@@ -1,0 +1,58 @@
+# Test configuration for functions section
+# Tests template substitution with {{function_name}} syntax
+
+description: Example config with reusable functions
+
+yaml_runner:
+  hierarchical: true
+
+functions:
+  simple_echo:
+    description: Simple single-line function
+    command: echo "Hello from function"
+  
+  multiline_script:
+    description: Multi-line Python script function
+    command: |
+      python3 -c "
+      import sys
+      print('Line 1')
+      print('Line 2')
+      print('Line 3')
+      "
+  
+  json_formatter:
+    description: Format JSON output
+    command: python3 -c "import sys, json; data=json.load(sys.stdin); print(json.dumps(data, indent=2))"
+  
+  grep_filter:
+    description: Filter output with grep
+    command: grep "success"
+
+test_simple:
+  description: Test simple function substitution
+  command: "{{simple_echo}}"
+
+test_inline:
+  description: Test function substituted inline with other commands
+  command: "echo \"Before\" && {{simple_echo}} && echo \"After\""
+
+test_pipeline:
+  description: Test function in a pipeline
+  command: "echo '{\"status\":\"success\"}' | {{json_formatter}}"
+
+test_multiline:
+  description: Test multi-line function
+  command: "{{multiline_script}}"
+
+test_combined:
+  description: Test multiple functions in one command
+  command: "echo \"success test\" | {{grep_filter}} && {{simple_echo}}"
+
+nested:
+  description: Nested commands with functions
+  
+  child:
+    description: Child command using function
+    command: "{{simple_echo}} && echo \"Child done\""
+

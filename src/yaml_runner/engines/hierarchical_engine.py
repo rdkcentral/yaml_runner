@@ -51,7 +51,10 @@ class HierarchicalEngine(BaseYamlRunnerEngine):
         """
         command_dicts = parsed_config.copy()
         for key, value in parsed_config.items():
-            if key == 'description' and nested:
+            if key == 'functions' and not nested:
+                command_dicts.pop(key)
+                continue
+            elif key == 'description' and nested:
                 continue
             elif key == 'command' and nested:
                 command_dicts.update({key: value})
