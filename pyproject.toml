@@ -3,6 +3,7 @@ name = "yaml_runner"
 version = "2.1.1"
 dependencies = [
     "PyYaml>=6.0",
+    "argparse_completion @ git+https://github.com/rdkcentral/argparse_completion.git@1.0.0" 
 ]
 [tool.setuptools.packages.find]
 include = ["yaml_runner", "yaml_runner.engines"]
@@ -11,3 +12,4 @@ namespaces = false
 
 [project.scripts]
 yaml_runner = "yaml_runner.cli:main"
+yaml_runner_install = "yaml_runner.cli:install"

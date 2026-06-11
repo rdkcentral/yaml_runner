@@ -24,7 +24,7 @@
 import argparse
 import io
 import subprocess
-import re
+import os
 import sys
 import threading
 
@@ -35,6 +35,7 @@ except ImportError:
     from yaml import SafeLoader
 
 from .engines import HierarchicalEngine, SimpleEngine
+from .yaml_runner_completion import get_completion
 
 class YamlRunner():
     """YamlRunner class for executing commands from a YAML configuration file.
@@ -76,7 +77,7 @@ class YamlRunner():
     @property
     def config(self) -> dict:
         """A copy of the config currently in use by the YamlRunner"""
-        return self._config.copy()
+        return self.config.copy()
 
     @config.setter
     def config(self,config:dict|io.IOBase|str):
@@ -181,8 +182,14 @@ class YamlRunner():
         """
         if config:
             self.config = config
-        commands = self._engine.get_commands(args)
-        return self._run_commands(commands)
+        if completion_env:= os.getenv('_YAML_RUNNER_COMPLETE'):
+            self._engine._setup_parsers()
+            completion = get_completion(self._engine._arg_parser,completion_env)
+            print('\n'.join(completion))
+            return[''],[''],[0]
+        else:
+            commands = self._engine.get_commands(args)
+            return self._run_commands(commands)
 
 def _read_stream(stream:io.IOBase, target:str, result_list:list):
     """Read data from a stream and writes it to either stdout or stderr whilst also
