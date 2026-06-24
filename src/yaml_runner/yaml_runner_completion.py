@@ -2,7 +2,6 @@
 
 import argparse
 import os
-import re
 
 from argparse_completion import argparse_completion
 

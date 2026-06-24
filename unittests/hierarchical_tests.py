@@ -55,7 +55,7 @@ class HierarchicalCLITest(CLITest):
         Test the hierarchical engine has been used to process
         the config.
         """
-        result = subprocess.run([self.yaml_runner_script,
+        result = subprocess.run(['yaml_runner',
                                               '-c',
                                               self.test_config_path,
                                               '--help'],
@@ -82,7 +82,7 @@ class HierarchicalCLITest(CLITest):
         Check that running commands following the nesting in the
         config works correctly.
         """
-        result = subprocess.run([self.yaml_runner_script,
+        result = subprocess.run(['yaml_runner',
                                               '-c',
                                               self.test_config_path,
                                               'run',

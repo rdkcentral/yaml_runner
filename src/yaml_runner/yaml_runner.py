@@ -77,7 +77,7 @@ class YamlRunner():
     @property
     def config(self) -> dict:
         """A copy of the config currently in use by the YamlRunner"""
-        return self.config.copy()
+        return self._engine.config
 
     @config.setter
     def config(self,config:dict|io.IOBase|str):

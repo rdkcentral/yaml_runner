@@ -24,16 +24,17 @@
 import argparse
 import os
 import pathlib
-import sys
 
+import importlib_resources
 import yaml
 try:
     from yaml import CSafeLoader as SafeLoader
 except ImportError:
     from yaml import SafeLoader
 
-from yaml_runner import YamlRunner
-from .yaml_runner_completion import get_completion
+import yaml_runner
+from yaml_runner.yaml_runner import YamlRunner
+from yaml_runner.yaml_runner_completion import get_completion
 
 
 class cli():
@@ -51,7 +52,7 @@ class cli():
                 print('\n'.join(get_completion(parser,completion_env)))
                 raise SystemExit(0)
             else:
-                if '-c' not in cwords:
+                if ('-c' not in cwords) and ('--config' not in cwords):
                     raise SystemExit(0)
                 else:
                     cwords = cwords.replace('--config', '', 1)
@@ -62,7 +63,7 @@ class cli():
             if completion_env:
                 raise SystemExit(0)
             else:
-                print(e.message)
+                print(e)
                 parser.print_help()
                 raise SystemExit(2)
 
@@ -110,7 +111,7 @@ def install():
         my_path = pathlib.Path(__file__)
         my_dir = my_path.parent
         os.makedirs(user_home.joinpath('.bash_completion.d'), exist_ok=True)
-        with open(my_dir.joinpath('../../data/yaml_runner_bash_completion.sh')) as in_file, \
+        with importlib_resources.open_text(yaml_runner,'data/yaml_runner_bash_completion.sh', encoding='utf-8') as in_file, \
              open(user_home.joinpath('.bash_completion.d/yaml_runner_bash_completion'),'w') as out_file:
             out_file.write(in_file.read())
         if (bashrc:=pathlib.Path.home().joinpath(pathlib.Path('.bashrc'))).exists():
@@ -122,12 +123,12 @@ def install():
 
 def _append_to_rcfile(rcfile:pathlib.Path):
     user_home = rcfile.parent
-    source_line = f'\n#YAML_RUNNER COMPLETION\nsource {user_home.joinpath(".bash_completion.d/yaml_runner_bash_completion")}\n'
+    source_line = f'# YAML_RUNNER COMPLETION\nsource "$HOME/.bash_completion.d/yaml_runner_bash_completion"\n'
     if rcfile.exists():
-        with open(rcfile,'r',encoding='utf-8') as rcfile_read:
+        with open(rcfile, 'r', encoding='utf-8') as rcfile_read:
             if source_line not in rcfile_read.read():
-                with open(rcfile,'a',encoding='utf-8') as rcfile_append:
-                    rcfile_append.write(f'\n{source_line}\n')
+                with open(rcfile, 'a', encoding='utf-8') as rcfile_append:
+                    rcfile_append.write('\n' + source_line)
 
 if __name__ == '__main__':
     main()

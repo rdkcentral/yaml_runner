@@ -54,7 +54,7 @@ class FailFastCLITest(CLITest):
         """
         Test all commands are run from a command list in the config.
         """
-        result = subprocess.run([self.yaml_runner_script,
+        result = subprocess.run(['yaml_runner',
                                               '-c',
                                               self.test_config_path,
                                               'list'],
@@ -82,7 +82,7 @@ class FailFastCLITest(CLITest):
         Check that the list of commands continue to run after a failure,
         with the fail_fast option set to false.
         """
-        result = subprocess.run([self.yaml_runner_script,
+        result = subprocess.run(['yaml_runner',
                                               '-c',
                                               self.test_config_path,
                                               'list_failure'],
