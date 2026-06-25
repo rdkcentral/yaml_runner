@@ -29,7 +29,6 @@ MY_DIR = path.dirname(MY_PATH)
 
 class CLITest(unittest.TestCase):
     """Test class for the yaml_runner script."""
-    yaml_runner_script = path.join(MY_DIR, '../src/yaml_runner/cli.py')
 
     @classmethod
     def _help_to_dict(cls,help_output: str) -> dict:

@@ -85,12 +85,12 @@ class SimpleCLITest(CLITest):
         Tests that running the script without arguments prints the help message
         and mentions the required configuration file option.
         """
-        result_no_args = subprocess.run(self.yaml_runner_script,
+        result_no_args = subprocess.run('yaml_runner',
                                         text=True,
                                         stdout=subprocess.PIPE,
                                         stderr=subprocess.STDOUT,
                                         check=False)
-        result_help = subprocess.run([self.yaml_runner_script,
+        result_help = subprocess.run(['yaml_runner',
                                       '--help'],
                                         text=True,
                                         stdout=subprocess.PIPE,
@@ -115,7 +115,7 @@ class SimpleCLITest(CLITest):
         Tests that running the script with --help and a valid configuration file
         prints the script's usage information.
         """
-        result = subprocess.run([self.yaml_runner_script,
+        result = subprocess.run(['yaml_runner',
                                  '--config',
                                  self.test_config_path,
                                  '--help'],
@@ -125,6 +125,7 @@ class SimpleCLITest(CLITest):
                                 check=False)
         self.assertEqual(result.returncode, 0, 'Test the exit code is zero')
         help_dict = self._help_to_dict(result.stdout)
+        print(help_dict)
         self.assertIn('hello_world',
                       help_dict.get('positionals',{}).keys(), 
                       'Test the hello_world choice is in the help message')
@@ -161,7 +162,7 @@ class SimpleCLITest(CLITest):
         Tests that running the script with a valid choice name executes
         the corresponding function and prints the expected output.
         """
-        result = subprocess.run([self.yaml_runner_script,
+        result = subprocess.run(['yaml_runner',
                                  '--config',
                                  self.test_config_path,
                                  'hello_world'],
@@ -178,7 +179,7 @@ class SimpleCLITest(CLITest):
         Tests that running the script with a choice supporting optional arguments
         and --help prints the specific usage information for that choice.
         """
-        result = subprocess.run([self.yaml_runner_script,
+        result = subprocess.run(['yaml_runner',
                                  '--config',
                                  self.test_config_path,
                                  'echo_passthrough',
@@ -208,7 +209,7 @@ class SimpleCLITest(CLITest):
     def test_5_passthrough_args(self):
         """Test passthough args work correctly
         """
-        result = subprocess.run([self.yaml_runner_script,
+        result = subprocess.run(['yaml_runner',
                                  '--config',
                                  self.test_config_path,
                                  'echo_passthrough',
@@ -229,7 +230,7 @@ class SimpleCLITest(CLITest):
     def test_6_list_commands(self):
         """Test that list commands are run correctly
         """
-        result = subprocess.run([self.yaml_runner_script,
+        result = subprocess.run(['yaml_runner',
                                  '--config',
                                  self.test_config_path,
                                  'list'],
@@ -254,7 +255,7 @@ class SimpleCLITest(CLITest):
     def test_7_list_command_with_passthrough(self):
         """Test that passthrough args are correctly run in list commands
         """
-        result = subprocess.run([self.yaml_runner_script,
+        result = subprocess.run(['yaml_runner',
                                  '--config',
                                  self.test_config_path,
                                  'list_passthrough',
@@ -283,7 +284,7 @@ class SimpleCLITest(CLITest):
     def test_8_fail_fast_list(self):
         """Test that list commands are run correctly
         """
-        result = subprocess.run([self.yaml_runner_script,
+        result = subprocess.run(['yaml_runner',
                                  '--config',
                                  self.test_config_path,
                                  'fail_fast'],

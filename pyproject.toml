@@ -1,13 +1,36 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "yaml_runner"
 version = "2.1.1"
 dependencies = [
-    "PyYaml>=6.0",
+    "importlib_resources>=7.1.0",
+    "PyYAML>=6.0",
+    "argparse_completion @ git+https://github.com/rdkcentral/argparse_completion.git@1.0.0"
 ]
-[tool.setuptools.packages.find]
-include = ["yaml_runner", "yaml_runner.engines"]
-where = ["src"]
-namespaces = false
 
 [project.scripts]
 yaml_runner = "yaml_runner.cli:main"
+yaml_runner_install = "yaml_runner.cli:install"
+
+# --- Package discovery (src layout) ---
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["yaml_runner*"]   # automatically picks up submodules
+namespaces = false
+
+# --- Include non-Python files ---
+[tool.setuptools.package-data]
+# If your data folder is *inside* yaml_runner, use this:
+yaml_runner = ["data/**/*"]
+
+# --- Include data outside packages ---
+[tool.setuptools]
+include-package-data = true
+
+# This ensures data/ is included in sdist/wheel
+[tool.setuptools.data-files]
+# Installs data into a shared location in site-packages
+"yaml_runner_data" = ["data/**/*"]
