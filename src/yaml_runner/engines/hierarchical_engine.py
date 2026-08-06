@@ -22,55 +22,107 @@
 #* ******************************************************************************
 
 import argparse
-import io
-import subprocess
-import re
-import sys
-import threading
 
-import yaml
-try:
-    from yaml import CSafeLoader as SafeLoader
-except ImportError:
-    from yaml import SafeLoader
+from pydantic import ValidationError
 
 from .base_engine import BaseYamlRunnerEngine
+from ..exceptions import ConfigValidationError
+from ..models import CommandNode, COMMAND_SECTIONS
 
 class HierarchicalEngine(BaseYamlRunnerEngine):
+    def _setup_commands(self):
+        stripped_config = self._strip_config(self._config)
 
-    def _strip_config(self, parsed_config: dict, nested: bool=False) -> dict:
+        commands: dict[str, CommandNode] = {}
+        for key, value in stripped_config.items():
+            commands[key] = self._build_command_node(value, key)
+        self._verify_duplicate_flags_or_options(commands)
+        self._commands = commands
+
+    def _strip_config(self, config: dict) -> dict:
         """
         Recursively strip the dict down to trees that contain commands.
-        
+
         Args:
-            parsed_config (dict): Dictionary containing command configuration data.
-            nested (bool): True if the function is being called in a recursive loop.
-        
+            config (dict): Dictionary containing command configuration data.
+
         Returns:
             dict: Config dictionary containing only sections with commands.
         """
-        command_dicts = parsed_config.copy()
-        for key, value in parsed_config.items():
-            if key == 'description' and nested:
-                continue
-            elif key == 'command' and nested:
-                command_dicts.update({key: value})
-            elif isinstance(value,dict):
-                check = self._strip_config(value,nested=True)
-                check_keys = list(check.keys())
-                if check and check_keys != ['description']:
-                    command_dicts.update({key:value})
-                else:
-                    command_dicts.pop(key)
-            else:
-                command_dicts.pop(key)
-        return command_dicts
+        result = {}
 
-    def _setup_parsers(self):
-        command_dicts = self._strip_config(self._config)
-        subparsers = self._arg_parser.add_subparsers(dest='command_name',
-                                                     required=True)
-        self._setup_subparsers(command_dicts, subparsers)
+        for key, value in config.items():
+            if not isinstance(value, dict):
+                continue
+
+            child = self._strip_config(value)
+
+            if "command" in value:
+                result[key] = {
+                    section: section_value
+                    for section, section_value in value.items()
+                    if section in COMMAND_SECTIONS
+                }
+                result[key].update(child)
+
+            elif child:
+                result[key] = child
+
+        return result
+
+    def _build_command_node(self, data: dict, path: str) -> CommandNode:
+        """Build a command node and recursively build all subcommands.
+
+        Raises ConfigValidationError if the command node or any subcommands are
+        invalid.
+        """
+        subcommands = self._extract_subcommands(data, path)
+
+        try:
+            return self._create_command_node(data, subcommands)
+        except ConfigValidationError as e:
+            raise ConfigValidationError(f"Error at path '{path}': {e}") from e
+
+    def _extract_subcommands(self, data: dict, path: str) -> dict[str, CommandNode]:
+        """Extract any key not in the known command sections as a subcommand.
+
+        Returns a dictionary of subcommands and their CommandNode.
+
+        Raises ConfigValidationError if any key not in the known command sections
+        isn't a valid subcommand.
+        """
+        subcommands = {}
+        for key, value in data.items():
+            if key in COMMAND_SECTIONS:
+                continue
+
+            subcommands[key] = self._build_command_node(value, path + key + ".")
+        return subcommands
+
+    def _verify_duplicate_flags_or_options(self, commands: dict[str, CommandNode]):
+        """Walk down each branch of the tree and error if any collisions
+        of flag or option names occur.
+        """
+        def walk(node: CommandNode, used: set[str]):
+            current = set()
+            current |= set(node.flags.keys())
+            current |= set(node.options.keys())
+            current |= {f.short for f in node.flags.values() if f.short is not None}
+            current |= {o.short for o in node.options.values() if o.short is not None}
+
+            overlap = current & used
+            if overlap:
+                raise ConfigValidationError(
+                    "A command tree can't have a duplicate of a flag or option. "
+                    f"Duplicate identifier(s) detected: {overlap}")
+
+            new_used = used | current
+
+            for sub in node.subcommands.values():
+                walk(sub, new_used)
+
+        for cmd in commands.values():
+            walk(cmd, set())
 
     def _setup_subparsers(self, nested_cmds:dict, subparsers: argparse._SubParsersAction):
         """

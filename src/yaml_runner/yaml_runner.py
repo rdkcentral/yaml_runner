@@ -35,7 +35,7 @@ except ImportError:
     from yaml import SafeLoader
 
 from .engines import HierarchicalEngine, SimpleEngine
-from .yaml_runner_completion import get_completion
+from .models import CompletedCommand
 
 class YamlRunner():
     """YamlRunner class for executing commands from a YAML configuration file.
@@ -45,10 +45,10 @@ class YamlRunner():
     parsers, allowing the commands from the yaml to be executed..
     """
 
-    def __init__(self, 
-                 config:dict|io.IOBase|str, 
+    def __init__(self,
+                 config:dict|io.IOBase|str,
                  program:str='',
-                 hierarchical: bool=False, 
+                 hierarchical: bool=False,
                  fail_fast=True,
                  parser_class:type[argparse.ArgumentParser]=argparse.ArgumentParser):
         """Initiate a YamlRunner object
@@ -71,8 +71,6 @@ class YamlRunner():
                                         program=program)
         self._program = program
         self._fail_fast = fail_fast
-        self.config = config
-
 
     @property
     def config(self) -> dict:
@@ -97,20 +95,20 @@ class YamlRunner():
             dict: Parsed config.
         """
         if isinstance(config,str):
-            with open(config,'r',encoding='utf-8') as f:
+            with open(config, 'r', encoding='utf-8') as f:
                 config_dict = yaml.load(f,SafeLoader)
-        elif isinstance(config,io.IOBase):
+        elif isinstance(config, io.IOBase):
             config.seek(0)
             config_dict = yaml.load(config,SafeLoader)
-        elif isinstance(config,dict):
+        elif isinstance(config, dict):
             config_dict = config
         else:
-            raise TypeError(f'config argument must of type IO, str or dict. Got type: [{type(config)}]')
+            raise TypeError(
+                f'Config argument must of type IO, str or dict. Got type: [{type(config)}]')
         return config_dict
 
-
-    def _run_command(self,command) -> tuple:
-        """Runs a command in the shell, captures both stdout and stderr, 
+    def _run_command(self,command) -> CompletedCommand:
+        """Runs a command in the shell, captures both stdout and stderr,
         prints them in real-time, and returns them.
 
         Args:
@@ -121,60 +119,55 @@ class YamlRunner():
         """
         stdout_result = []
         stderr_result = []
-        with subprocess.Popen(command,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                text=True,
-                                shell=True) as proc:
+        with subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            shell=True
+        ) as proc:
             stdout_thread = threading.Thread(target=_read_stream,
                                              args=(proc.stdout, 'stdout',stdout_result))
             stderr_thread = threading.Thread(target=_read_stream,
                                              args=(proc.stderr, 'stderr', stderr_result))
+
             stdout_thread.start()
             stderr_thread.start()
             # Wait for the process to finish
             return_code = proc.wait()
             # Ensure threads finish reading and collect data
             stdout_thread.join()
-            stdout = stdout_result[0]
             stderr_thread.join()
-            stderr = stderr_result[0]
-        return stdout, stderr, return_code
 
-    def _run_commands(self, commands: list[str]) -> tuple[list[str],list[str],list[int]]:
+        return CompletedCommand(return_code, stdout_result[0], stderr_result[0])
+
+    def _run_commands(self, commands: list[str]) -> list[CompletedCommand]:
         """
-        Runs a list of commands in the self.commands attribute and returns the stdout, stderr, and exit
-        codes for each command.
-        
+        Runs a list of commands in the self.commands attribute and returns the completed commands.
+
         Returns:
-            Returns a tuple containing three lists: `stdout_list`, `stderr_list`, and `exit_code_list`.
-              Each list contains the respective outputs (stdout, stderr,
-              and exit code) of running the command(s) specified in the `self.commands` attribute.
+            A list of CompletedCommands
         """
-        stdout_list = []
-        stderr_list = []
-        exit_code_list = []
+        completed_commands = []
+
         for command in commands:
-            stdout, stderr, exit_code = self._run_command(command)
-            stdout_list.append(stdout)
-            stderr_list.append(stderr)
-            exit_code_list.append(exit_code)
-            if self._fail_fast and exit_code_list[-1] > 0:
+            completed_command = self._run_command(command)
+            completed_commands.append(completed_command)
+            if self._fail_fast and completed_command.exit_code > 0:
                 break
-        return stdout_list, stderr_list, exit_code_list
+        return completed_commands
 
-
-    def run(self, args: list[str], config:dict|io.IOBase|str=None) -> tuple:
+    def run(self, args: list[str], config: dict|io.IOBase|str = None) -> list[CompletedCommand]:
         """
         This function runs a script with specified configuration and arguments, processing command line
         arguments and executing commands.
-        
+
         Args:
             config (dict|io.IOBase|str): Yaml configuration of commands that can be run. Defaults to None.
                 If None, config is expected to be passed in from command line with `--config` option.
-            args (list): The arguments passed to the script. Defaults to None. 
+            args (list): The arguments passed to the script. Defaults to None.
                 If None, external args are processed and used instead.
-        
+
         Returns:
             tuple: Returns a tuple containing three lists: `stdout_list`, `stderr_list`, and `exit_code_list`.
               Each list contains the respective outputs (stdout, stderr,
@@ -182,11 +175,11 @@ class YamlRunner():
         """
         if config:
             self.config = config
-        if completion_env:= os.getenv('_YAML_RUNNER_COMPLETE'):
-            self._engine._setup_parsers()
-            completion = get_completion(self._engine._arg_parser,completion_env)
+
+        if completion_env := os.getenv('_YAML_RUNNER_COMPLETE'):
+            completion = self._engine.get_completion(completion_env)
             print('\n'.join(completion))
-            return[''],[''],[0]
+            return [CompletedCommand('', '', 0)]
         else:
             commands = self._engine.get_commands(args)
             return self._run_commands(commands)
@@ -194,11 +187,11 @@ class YamlRunner():
 def _read_stream(stream:io.IOBase, target:str, result_list:list):
     """Read data from a stream and writes it to either stdout or stderr whilst also
     capturing the data.
-    
+
     Args:
         stream (io.IOBase): Stream object from which data will be read.
         target (str): Where the output from the stream should be directed. Either 'stdout' or 'stderr'
-        result_list (list): The list that will store the data read from the stream. 
+        result_list (list): The list that will store the data read from the stream.
             Each chunk of data read from the stream will be appended to this list.
     """
     data = ''

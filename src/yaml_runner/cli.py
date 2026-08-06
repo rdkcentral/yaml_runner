@@ -32,10 +32,10 @@ try:
 except ImportError:
     from yaml import SafeLoader
 
+from .exceptions import ConfigLoadError, YamlRunnerError
 import yaml_runner
 from yaml_runner.yaml_runner import YamlRunner
 from yaml_runner.yaml_runner_completion import get_completion
-
 
 class cli():
     def __init__(self):
@@ -46,10 +46,11 @@ class cli():
                                   action='store',
                                   required=True,
                                   nargs=1)
+
         if completion_env := os.getenv('_YAML_RUNNER_COMPLETE'):
             cwords = os.getenv('COMP_WORDS','').replace('yaml_runner', '', 1)
             if len(cwords.split()) == 1:
-                print('\n'.join(get_completion(parser,completion_env)))
+                print('\n'.join(get_completion(parser, completion_env)))
                 raise SystemExit(0)
             else:
                 if ('-c' not in cwords) and ('--config' not in cwords):
@@ -57,6 +58,7 @@ class cli():
                 else:
                     cwords = cwords.replace('--config', '', 1)
                     cwords = cwords.replace('-c', '', 1)
+
         try:
             cli_args, yaml_args = parser.parse_known_args()
         except argparse.ArgumentError as e:
@@ -68,21 +70,21 @@ class cli():
                 raise SystemExit(2)
 
         if pathlib.Path(cli_args.config[0]).exists():
-            with open(cli_args.config[0],'r',encoding='utf-8') as cfg_file:
-                cfg = yaml.load(cfg_file,SafeLoader)
+            with open(cli_args.config[0], 'r', encoding='utf-8') as cfg_file:
+                cfg = yaml.load(cfg_file, SafeLoader)
             if cfg is None:
                 raise RuntimeError(f'File {cli_args.config[0]} is empty.')
-            yr_config = cfg.pop('yaml_runner',{})
+            yr_config = cfg.pop('yaml_runner', {})
             yr_settings = self._get_yr_settings(yr_config)
             if completion_env:
-                os.environ['COMP_WORDS'] = cwords.replace(cli_args.config[0],'')
+                os.environ['COMP_WORDS'] = cwords.replace(cli_args.config[0], '')
             yr = YamlRunner(cfg,
                             program='yaml_runner',
                             **yr_settings)
-            _,_,exit_code = yr.run(yaml_args)
-            raise SystemExit(sorted(exit_code)[-1])
+            completed_commands = yr.run(yaml_args)
+            raise SystemExit(max(completed_commands).exit_code)
         else:
-            raise FileNotFoundError(cli_args.config[0])
+            raise ConfigLoadError(f"File not found: {cli_args.config[0]}")
 
     def _get_yr_settings(self,global_cfg:dict) -> dict:
         """
@@ -103,7 +105,10 @@ class cli():
         return settings
 
 def main():
-    cli()
+    try:
+        cli()
+    except YamlRunnerError as e:
+        print(f"ERROR: {e}")
 
 def install():
     if os.getenv('SHELL') == '/bin/bash':

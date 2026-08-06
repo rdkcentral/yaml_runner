@@ -21,20 +21,9 @@
 # *
 #* ******************************************************************************
 
-import argparse
-import io
-import subprocess
-import re
-import sys
-import threading
-
-import yaml
-try:
-    from yaml import CSafeLoader as SafeLoader
-except ImportError:
-    from yaml import SafeLoader
-
 from .base_engine import BaseYamlRunnerEngine
+from ..exceptions import ConfigValidationError
+from ..models import CommandNode
 
 class SimpleEngine(BaseYamlRunnerEngine):
     """YamlRunner class for executing commands from a YAML configuration file.
@@ -47,13 +36,35 @@ class SimpleEngine(BaseYamlRunnerEngine):
         _arg_parser (argparse.ArgumentParser): The main argument parser for the script.
     """
 
-    def _setup_parsers(self):
-        command_dicts = self._get_command_sections(self._config)
-        subparsers = self._arg_parser.add_subparsers(dest='command_name',
-                                                     required=True)
-        for command_dict in command_dicts:
-            params = command_dict.get('params')
-            command_parser = subparsers.add_parser(command_dict.get('name'),
-                                                   help=command_dict.get('description',''))
-            if params:
-                self._add_params_parser(command_parser, params)
+    def _setup_commands(self):
+        if self._commands:
+            self._commands = {}
+        self._get_command_sections(self._config)
+
+    def _get_command_sections(self, parsed_config: dict):
+        """
+        Recursive function to extract the command sections from a dictionary.
+
+        Args:
+        parsed_config (dict): Dictionary containing command configuration data.
+
+        Returns:
+        A list of dictionaries containing command sections from the parsed configuration. Each
+        dictionary includes the 'name' key with the corresponding key from the parsed configuration.
+        """
+        for key, value in parsed_config.items():
+            if isinstance(value, dict):
+                if value.get('command'):
+                    if key in self._commands:
+                        raise ConfigValidationError(
+                            f"Two commands in config with {key}. "
+                            "Maybe you meant to use hierarchical mode?")
+
+                    try:
+                        node = self._create_command_node(value)
+                    except ConfigValidationError as e:
+                        raise ConfigValidationError(
+                            f"Config error with command {key}: {str(e)}") from e
+                    self._commands[key] = node
+                else:
+                    self._get_command_sections(value)

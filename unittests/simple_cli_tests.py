@@ -28,41 +28,41 @@ The tests also rely on a configuration file
 
 The tests verify the behavior of the script in the following scenarios:
 
-* Running the script without arguments prints the help message and mentions  
-  the required `-c` or `--config` option for specifying the configuration file.  
+* Running the script without arguments prints the help message and mentions
+  the required `-c` or `--config` option for specifying the configuration file.
   *(Test: `test_1_no_config`)*
 
-* Running the script with the `--help` option and a valid configuration file  
-  prints the script's usage information, including available choices and  
-  descriptions.  
+* Running the script with the `--help` option and a valid configuration file
+  prints the script's usage information, including available choices and
+  descriptions.
   *(Test: `test_2_help_with_config`)*
 
-* Running the script with the `--config` option and a valid configuration file  
-  followed by a valid choice name (e.g., `hello_world`) executes the corresponding  
-  function and prints the expected output.  
+* Running the script with the `--config` option and a valid configuration file
+  followed by a valid choice name (e.g., `hello_world`) executes the corresponding
+  function and prints the expected output.
   *(Test: `test_3_hello_world`)*
 
-* Running the script with the `--config` option, a valid choice name supporting  
-  optional arguments (e.g., `echo_passthrough`), and the `--help` option prints the specific  
-  usage information for that choice.  
+* Running the script with the `--config` option, a valid choice name supporting
+  optional arguments (e.g., `echo_passthrough`), and the `--help` option prints the specific
+  usage information for that choice.
   *(Test: `test_4_passthrough_arg_in_help`)*
 
-* Running the script with the `--config` option and the `echo_passthrough` command  
-  followed by additional arguments (e.g., `This is a test`) correctly echoes the arguments.  
+* Running the script with the `--config` option and the `echo_passthrough` command
+  followed by additional arguments (e.g., `This is a test`) correctly echoes the arguments.
   *(Test: `test_5_passthrough_args`)*
 
-* Running the script with the `--config` option and the `list` command executes  
-  a predefined sequence of commands in the correct order.  
+* Running the script with the `--config` option and the `list` command executes
+  a predefined sequence of commands in the correct order.
   *(Test: `test_6_list_commands`)*
 
-* Running the script with the `--config` option and the `list_passthrough` command  
-  followed by additional arguments substitutes those arguments into the command sequence  
-  and executes them correctly.  
+* Running the script with the `--config` option and the `list_passthrough` command
+  followed by additional arguments substitutes those arguments into the command sequence
+  and executes them correctly.
   *(Test: `test_7_list_command_with_passthrough`)*
 
-* Running the script with the `--config` option and the `fail_fast` command executes  
-  a sequence of commands but stops execution immediately upon encountering a failure,  
-  skipping any remaining commands.  
+* Running the script with the `--config` option and the `fail_fast` command executes
+  a sequence of commands but stops execution immediately upon encountering a failure,
+  skipping any remaining commands.
   *(Test: `test_8_fail_fast_list`)*
 """
 
@@ -106,7 +106,7 @@ class SimpleCLITest(CLITest):
         self.assertIn('--config CONFIG',
                       help_dict.get('options',{}).keys(),
                       'Test the --config option is in help outpu')
-        self.assertIn('Yaml config to read from.', 
+        self.assertIn('Yaml config to read from.',
                       help_dict.get('options',{}).values(),
                       'Test the description for --config/-c is correct')
 
@@ -127,7 +127,7 @@ class SimpleCLITest(CLITest):
         help_dict = self._help_to_dict(result.stdout)
         print(help_dict)
         self.assertIn('hello_world',
-                      help_dict.get('positionals',{}).keys(), 
+                      help_dict.get('positionals',{}).keys(),
                       'Test the hello_world choice is in the help message')
         self.assertIn('Print hello world in stdout.',
                       help_dict.get('positionals',{}).get('hello_world',''),
