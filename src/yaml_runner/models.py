@@ -21,6 +21,7 @@
 #* ******************************************************************************
 
 from dataclasses import dataclass
+import re
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -64,16 +65,6 @@ class CommandNode(BaseModel):
                 "Nodes with subcommands cannot define positional arguments.")
         return self
 
-class Settings(BaseModel):
-    """Yaml Runner settings."""
-    fail_fast: bool = True
-    hierarchical: bool = False
-
-class Config(BaseModel):
-    """Represents the whole config. Currently just has a commands section."""
-    settings: Settings = Settings()
-    commands: dict[str, CommandNode]
-
 @dataclass
 class ParsedCommand:
     """A list of commands and passed in parameters."""
@@ -81,6 +72,36 @@ class ParsedCommand:
     params: dict[str, str]
     passthrough: list[str]
 
+    def build(self) -> list[str]:
+        """Render command templates into concrete command strings by replacing
+        {{key}} in command templates with values in parsed_command.params.
+
+        Example:
+            parsed_command.command = ["echo {{name}} $@"]
+            parsed_command.params = {"name": "Benji"}
+            parsed_command.passthrough = ["!"]
+
+            Returns ["echo Benji !"]
+        """
+        commands = []
+        for command in self.commands:
+            commands.append(self._render(command, ))
+        return commands
+
+    def _render(self, command_template: str):
+        """Augument command string with passed values.
+
+        Replace {{key}} in template with values from params and $@ with any extra
+        passthrough args.
+        """
+        command_template = command_template.replace("$@", " ".join(self.passthrough))
+        return re.sub(
+            r"\{\{(\w+)\}\}",
+            lambda m: self.params[m.group(1)] if m.group(1) in self.params else "",
+            command_template
+        )
+
+# order=True means we can sort CompletedCommands numerically by their exit_code
 @dataclass(order=True)
 class CompletedCommand:
     exit_code: int

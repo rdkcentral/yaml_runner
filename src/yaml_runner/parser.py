@@ -82,7 +82,10 @@ class ParserBuilder:
     ):
         """Recursively build parser for commands and nested subcommands."""
         for name, command_node in command_nodes.items():
-            cmd_parser = subparser.add_parser(name)
+            cmd_parser = subparser.add_parser(
+                name,
+                help=command_node.description,
+                description=command_node.description)
             if command_node.command:
                 self._add_command(cmd_parser, command_node)
             if command_node.subcommands:

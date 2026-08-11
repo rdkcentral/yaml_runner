@@ -23,7 +23,6 @@
 
 from .base_engine import BaseYamlRunnerEngine
 from ..exceptions import ConfigValidationError
-from ..models import CommandNode
 
 class SimpleEngine(BaseYamlRunnerEngine):
     """YamlRunner class for executing commands from a YAML configuration file.

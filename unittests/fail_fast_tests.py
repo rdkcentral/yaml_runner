@@ -48,7 +48,7 @@ MY_DIR = path.dirname(MY_PATH)
 
 class FailFastCLITest(CLITest):
     """Test class for the yaml_runner script."""
-    test_config_path = path.join(MY_DIR, '../examples/fail_fast_config.yml')
+    test_config_path = path.join(MY_DIR, 'fixtures/fail_fast_config.yml')
 
     def test_1_check_list_command(self):
         """

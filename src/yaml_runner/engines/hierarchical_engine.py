@@ -32,6 +32,7 @@ from ..models import CommandNode, COMMAND_SECTIONS
 class HierarchicalEngine(BaseYamlRunnerEngine):
     def _setup_commands(self):
         stripped_config = self._strip_config(self._config)
+        # print(stripped_config)
 
         commands: dict[str, CommandNode] = {}
         for key, value in stripped_config.items():

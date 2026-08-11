@@ -48,7 +48,7 @@ MY_DIR = path.dirname(MY_PATH)
 
 class HierarchicalCLITest(CLITest):
     """Test class for the yaml_runner script."""
-    test_config_path = path.join(MY_DIR, '../examples/hierarchical_config.yml')
+    test_config_path = path.join(MY_DIR, 'fixtures/hierarchical_config.yml')
 
     def test_1_check_hierarchical_engine_is_used(self):
         """

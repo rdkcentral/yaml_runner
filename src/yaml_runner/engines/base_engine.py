@@ -64,8 +64,8 @@ class BaseYamlRunnerEngine(ABC):
         Returns:
             list[str]: List of strings, commands to be run.
         """
-        parsed_args = self._parser.parse(cli_args)
-        return command_builder.build(parsed_args)
+        parsed_command = self._parser.parse(cli_args)
+        return parsed_command.build()
 
     def get_completion(self, completion_shell: str):
         return self._parser.get_completion(completion_shell)
