@@ -21,24 +21,19 @@
 # *
 #* ******************************************************************************
 
-import argparse
-
-from pydantic import ValidationError
-
-from .base_engine import BaseYamlRunnerEngine
+from .base_config_reader import BaseConfigReader
 from ..exceptions import ConfigValidationError
 from ..models import CommandNode, COMMAND_SECTIONS
 
-class HierarchicalEngine(BaseYamlRunnerEngine):
-    def _setup_commands(self):
-        stripped_config = self._strip_config(self._config)
-        # print(stripped_config)
+class HierarchicalConfigReader(BaseConfigReader):
+    def get_commands(self) -> dict[str, CommandNode]:
+        stripped_config = self._strip_config(self.config)
 
         commands: dict[str, CommandNode] = {}
         for key, value in stripped_config.items():
             commands[key] = self._build_command_node(value, key)
         self._verify_duplicate_flags_or_options(commands)
-        self._commands = commands
+        return commands
 
     def _strip_config(self, config: dict) -> dict:
         """
@@ -67,7 +62,13 @@ class HierarchicalEngine(BaseYamlRunnerEngine):
                 result[key].update(child)
 
             elif child:
-                result[key] = child
+                result[key] = {
+                    section: section_value
+                    for section, section_value in value.items()
+                    if section in COMMAND_SECTIONS
+                }
+
+                result[key].update(child)
 
         return result
 
@@ -124,29 +125,3 @@ class HierarchicalEngine(BaseYamlRunnerEngine):
 
         for cmd in commands.values():
             walk(cmd, set())
-
-    def _setup_subparsers(self, nested_cmds:dict, subparsers: argparse._SubParsersAction):
-        """
-        Recursively sets up subparsers for the nested commands in the dict.
-
-        Sets up subparser for the top keys in the dict. If a command is found under the key
-        the commands params are added to the subparser. Otherwise, the nested dict is passed
-        into the next call of this functions. The key 'description' is ignored, to prevent
-        the description of a subcommand from being added as a subcommand itself.
-
-        Args:
-            nested_cmds (dict): Dictionary of nested commands.
-            subparsers (argparse._SubParsersAction): The main argument parsers subparser object.
-        """
-        for key, value in nested_cmds.items():
-            if key == 'description':
-                continue
-            command_parser = subparsers.add_parser(key,
-                                    help=value.get('description',''))
-            if value.get('command'):
-                params = value.get('params')
-                if params:
-                    self._add_params_parser(command_parser,params)
-            else:
-                command_subparsers = command_parser.add_subparsers(dest='command_name', required=True)
-                self._setup_subparsers(value,command_subparsers)

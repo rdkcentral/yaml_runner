@@ -23,10 +23,7 @@
 
 import argparse
 import io
-import subprocess
 import os
-import sys
-import threading
 
 import yaml
 try:
@@ -34,7 +31,10 @@ try:
 except ImportError:
     from yaml import SafeLoader
 
-from .engines import HierarchicalEngine, SimpleEngine
+from .command_builder import CommandBuilder
+from . import command_runner
+from .config_readers import HierarchicalConfigReader, SimpleConfigReader
+from .parser import ParserBuilder
 from .models import CompletedCommand
 
 class YamlRunner():
@@ -59,34 +59,40 @@ class YamlRunner():
             hierarchical (bool, Optional): Process the yaml hierarchically. Defaults to False.
             fail_fast (bool, Optional): Prevent command list from continuing after a command has failed.
                                         Defaults to True.
-
         """
         if hierarchical:
-            self._engine = HierarchicalEngine(self._config_to_dict(config),
-                                              parser_class=parser_class,
-                                              program=program)
+            self._config_reader_class = HierarchicalConfigReader
         else:
-            self._engine = SimpleEngine(self._config_to_dict(config),
-                                        parser_class=parser_class,
-                                        program=program)
+            self._config_reader = SimpleConfigReader
+
         self._program = program
         self._fail_fast = fail_fast
+        self._parser_builder = ParserBuilder(parser_class, program)
+        self._command_builder = CommandBuilder()
+        self.config = config
 
     @property
     def config(self) -> dict:
         """A copy of the config currently in use by the YamlRunner"""
-        return self._engine.config
+        return self._config_reader.config
 
     @config.setter
-    def config(self,config:dict|io.IOBase|str):
-        self._engine.config = self._config_to_dict(config)
+    def config(self, config: dict|io.IOBase|str):
+        config_dict = self._config_to_dict(config)
 
-    def _config_to_dict(self,config:dict|io.IOBase|str) -> dict:
+        reader = self._config_reader_class(config_dict)
+        commands = reader.get_commands()
+        parser = self._parser_builder.build(commands)
+
+        self._config_reader = reader
+        self._parser = parser
+
+    def _config_to_dict(self, config: dict|io.IOBase|str) -> dict:
         """Processes the incoming config and returns the dictionary
 
         Args:
-            config (dict | io.IOBase | str): A config to be process, either already parsed as a dictionary,
-                                             as an open file or as a string path to the file.
+            config (dict | io.IOBase | str): A config to be process, either already parsed
+                as a dictionary, as an open file or as a string path to the file.
 
         Raises:
             TypeError: When config is not a valid type.
@@ -106,56 +112,6 @@ class YamlRunner():
             raise TypeError(
                 f'Config argument must of type IO, str or dict. Got type: [{type(config)}]')
         return config_dict
-
-    def _run_command(self,command) -> CompletedCommand:
-        """Runs a command in the shell, captures both stdout and stderr,
-        prints them in real-time, and returns them.
-
-        Args:
-            command: A list containing the command and its arguments.
-
-        Returns:
-            A tuple containing captured stdout (bytes) and stderr (bytes).
-        """
-        stdout_result = []
-        stderr_result = []
-        with subprocess.Popen(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            shell=True
-        ) as proc:
-            stdout_thread = threading.Thread(target=_read_stream,
-                                             args=(proc.stdout, 'stdout',stdout_result))
-            stderr_thread = threading.Thread(target=_read_stream,
-                                             args=(proc.stderr, 'stderr', stderr_result))
-
-            stdout_thread.start()
-            stderr_thread.start()
-            # Wait for the process to finish
-            return_code = proc.wait()
-            # Ensure threads finish reading and collect data
-            stdout_thread.join()
-            stderr_thread.join()
-
-        return CompletedCommand(return_code, stdout_result[0], stderr_result[0])
-
-    def _run_commands(self, commands: list[str]) -> list[CompletedCommand]:
-        """
-        Runs a list of commands in the self.commands attribute and returns the completed commands.
-
-        Returns:
-            A list of CompletedCommands
-        """
-        completed_commands = []
-
-        for command in commands:
-            completed_command = self._run_command(command)
-            completed_commands.append(completed_command)
-            if self._fail_fast and completed_command.exit_code > 0:
-                break
-        return completed_commands
 
     def run(self, args: list[str], config: dict|io.IOBase|str = None) -> list[CompletedCommand]:
         """
@@ -177,34 +133,13 @@ class YamlRunner():
             self.config = config
 
         if completion_env := os.getenv('_YAML_RUNNER_COMPLETE'):
-            completion = self._engine.get_completion(completion_env)
+            completion = self._parser.get_completion(completion_env)
             print('\n'.join(completion))
             return [CompletedCommand('', '', 0)]
         else:
-            commands = self._engine.get_commands(args)
-            return self._run_commands(commands)
+            parsed_command = self._parser.parse(args)
+            built_commands = self._command_builder.build(parsed_command)
+            return command_runner.run_commands(built_commands, self._fail_fast)
 
-def _read_stream(stream:io.IOBase, target:str, result_list:list):
-    """Read data from a stream and writes it to either stdout or stderr whilst also
-    capturing the data.
-
-    Args:
-        stream (io.IOBase): Stream object from which data will be read.
-        target (str): Where the output from the stream should be directed. Either 'stdout' or 'stderr'
-        result_list (list): The list that will store the data read from the stream.
-            Each chunk of data read from the stream will be appended to this list.
-    """
-    data = ''
-    if target == 'stdout':
-        output = sys.stdout
-    elif target == 'stderr':
-        output = sys.stderr
-
-    while True:
-        chunk = stream.readline()
-        if chunk == '':
-            break
-        data += chunk
-        output.write(chunk)
-        output.flush()
-    result_list.append(data)
+    def get_completion(self, completion_shell: str):
+        self._parser.get_completion(completion_shell)

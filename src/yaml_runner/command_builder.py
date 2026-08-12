@@ -1,33 +1,56 @@
-"""Render parsed commands by substituing placeholders with values.
-
-Takes command templates (e.g. "echo {{name}}") and replaces placeholders
-with the corresponding values to produce executable command strings.
-"""
+#** *****************************************************************************
+# *
+# * If not stated otherwise in this file or this component's LICENSE file the
+# * following copyright and licenses apply:
+# *
+# * Copyright 2024 RDK Management
+# *
+# * Licensed under the Apache License, Version 2.0 (the "License");
+# * you may not use this file except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *
+# http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *
+#* ******************************************************************************
+"""Takes a parsed command with metadata and builds it into a list of commands to run."""
 import re
 
-from .parser import ParsedCommand
+from .models import ParsedCommand
 
-def build(parsed_command: ParsedCommand) -> list[str]:
-    """Render command templates into concrete command strings by replacing
-    {{key}} in command templates with values in parsed_command.params.
+class CommandBuilder:
+    def build(self, parsed: ParsedCommand) -> list[str]:
+        """Render command templates into concrete command strings by replacing
+        {{key}} in command templates with values in parsed_command.params.
 
-    Example:
-        parsed_command.command = ["echo {{name}} $@"]
-        parsed_command.params = {"name": "Benji"}
-        parsed_command.passthrough = ["!"]
+        Example:
+            parsed_command.command = ["echo {{name}} $@"]
+            parsed_command.params = {"name": "Benji"}
+            parsed_command.passthrough = ["!"]
 
-        Returns ["echo Benji !"]
-    """
-    commands = []
-    for command in parsed_command.commands:
-        commands.append(_render(command, parsed_command))
-    return commands
+            Returns ["echo Benji !"]
+        """
+        commands = []
+        for command in parsed.commands:
+            commands.append(self._render(command, parsed))
+        return commands
 
-def _render(command_template: str, parsed_command: ParsedCommand):
-    """Replace {{key}} in template with values from params and $@ with any extra passthrough args."""
-    command_template = command_template.replace("$@", " ".join(parsed_command.passthrough))
-    return re.sub(
-        r"\{\{(\w+)\}\}",
-        lambda m: parsed_command.params[m.group(1)] if m.group(1) in parsed_command.params else "",
-        command_template
-    )
+    def _render(self, command_template: str, parsed: ParsedCommand):
+        """Augument command string with passed values.
+
+        Replace {{key}} in template with values from params and $@ with any extra
+        passthrough args.
+        """
+        command_template = command_template.replace("$@", " ".join(parsed.passthrough))
+        rendered = re.sub(
+            r"\{\{(\w+)\}\}",
+            lambda m: parsed.params[m.group(1)] if m.group(1) in parsed.params else "",
+            command_template
+        )
+        return rendered

@@ -22,24 +22,14 @@
 #* ******************************************************************************
 
 from abc import ABC, abstractmethod
-import argparse
 
 from pydantic import ValidationError
 
-from .. import command_builder
 from ..exceptions import ConfigValidationError
 from ..models import CommandNode
-from ..parser import ParserBuilder
 
-class BaseYamlRunnerEngine(ABC):
-    def __init__(
-            self,
-            config,
-            parser_class: type[argparse.ArgumentParser] = argparse.ArgumentParser,
-            program: str = ''):
-        self._parser_builder = ParserBuilder(parser_class, program)
-        self._commands: dict[str, CommandNode] = {}
-
+class BaseConfigReader(ABC):
+    def __init__(self, config: dict):
         self.config = config
 
     @property
@@ -48,37 +38,25 @@ class BaseYamlRunnerEngine(ABC):
         return self._config.copy()
 
     @config.setter
-    def config(self,config: dict):
-        if isinstance(config,dict):
+    def config(self, config: dict):
+        if isinstance(config, dict):
             self._config = config
-            self._setup_commands()
-            self._parser = self._parser_builder.build(self._commands)
         else:
             raise TypeError('Expected config as type: dict')
 
-    def get_commands(self, cli_args: list[str]) -> list[str]:
+    @abstractmethod
+    def get_commands(self, cli_args: list[str]) -> dict[str, CommandNode]:
         """
         This method takes in the cli args as a list of strings.
         Returns the commands to be run as a list of strings.
 
         Returns:
-            list[str]: List of strings, commands to be run.
-        """
-        parsed_command = self._parser.parse(cli_args)
-        return parsed_command.build()
-
-    def get_completion(self, completion_shell: str):
-        return self._parser.get_completion(completion_shell)
-
-    @abstractmethod
-    def _setup_commands(self):
-        """
-        Sets up the argument parser/s for each command section
-        found in the config.
+            dict[str, CommandNode]: A dictionary with keys as command names and
+                their attritbutes as CommandNodes.
         """
         pass
 
-    def _create_command_node(self, data: dict, subcommands: dict[str, CommandNode] = {}):
+    def _create_command_node(self, data: dict, subcommands: dict[str, CommandNode] = None):
         def _normalize_command(command: str | list[str] | None) -> list[str] | None:
             if command is None:
                 return None
@@ -94,7 +72,7 @@ class BaseYamlRunnerEngine(ABC):
                 options = data.get("options") or {},
                 flags = data.get("flags") or {},
                 passthrough = params.get("passthrough", False),
-                subcommands = subcommands
+                subcommands = subcommands or {}
             )
         except ValidationError as e:
             raise ConfigValidationError(f"{str(e)}") from e

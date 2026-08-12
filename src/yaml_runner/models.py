@@ -25,7 +25,7 @@ import re
 
 from pydantic import BaseModel, Field, model_validator
 
-# Anything not under one of these sections in a command is assumed to be a subcmd
+# Fields a command can contain and fields a group can contain.
 COMMAND_SECTIONS = frozenset({"description", "command", "arguments", "options", "flags"})
 
 class ArgumentNode(BaseModel):
@@ -71,35 +71,6 @@ class ParsedCommand:
     commands: list[str]
     params: dict[str, str]
     passthrough: list[str]
-
-    def build(self) -> list[str]:
-        """Render command templates into concrete command strings by replacing
-        {{key}} in command templates with values in parsed_command.params.
-
-        Example:
-            parsed_command.command = ["echo {{name}} $@"]
-            parsed_command.params = {"name": "Benji"}
-            parsed_command.passthrough = ["!"]
-
-            Returns ["echo Benji !"]
-        """
-        commands = []
-        for command in self.commands:
-            commands.append(self._render(command, ))
-        return commands
-
-    def _render(self, command_template: str):
-        """Augument command string with passed values.
-
-        Replace {{key}} in template with values from params and $@ with any extra
-        passthrough args.
-        """
-        command_template = command_template.replace("$@", " ".join(self.passthrough))
-        return re.sub(
-            r"\{\{(\w+)\}\}",
-            lambda m: self.params[m.group(1)] if m.group(1) in self.params else "",
-            command_template
-        )
 
 # order=True means we can sort CompletedCommands numerically by their exit_code
 @dataclass(order=True)

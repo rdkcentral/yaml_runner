@@ -22,5 +22,5 @@
 
 import unittest
 
-class OptionTests(unittest.testcase):
+class FlagTests(unittest.testcase):
     pass

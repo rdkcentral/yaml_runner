@@ -21,10 +21,11 @@
 # *
 #* ******************************************************************************
 
-from .base_engine import BaseYamlRunnerEngine
+from .base_config_reader import BaseConfigReader
 from ..exceptions import ConfigValidationError
+from ..models import CommandNode
 
-class SimpleEngine(BaseYamlRunnerEngine):
+class SimpleConfigReader(BaseConfigReader):
     """YamlRunner class for executing commands from a YAML configuration file.
 
     This class provides a framework for running commands defined within a YAML
@@ -35,12 +36,11 @@ class SimpleEngine(BaseYamlRunnerEngine):
         _arg_parser (argparse.ArgumentParser): The main argument parser for the script.
     """
 
-    def _setup_commands(self):
-        if self._commands:
-            self._commands = {}
-        self._get_command_sections(self._config)
+    def get_commands(self) -> dict[str, CommandNode]:
+        commands = self._get_command_sections(self._config)
+        return commands
 
-    def _get_command_sections(self, parsed_config: dict):
+    def _get_command_sections(self, parsed_config: dict) -> dict[str, CommandNode]:
         """
         Recursive function to extract the command sections from a dictionary.
 
@@ -51,19 +51,27 @@ class SimpleEngine(BaseYamlRunnerEngine):
         A list of dictionaries containing command sections from the parsed configuration. Each
         dictionary includes the 'name' key with the corresponding key from the parsed configuration.
         """
+        commands: dict[str, CommandNode] = {}
         for key, value in parsed_config.items():
             if isinstance(value, dict):
                 if value.get('command'):
-                    if key in self._commands:
-                        raise ConfigValidationError(
-                            f"Two commands in config with {key}. "
-                            "Maybe you meant to use hierarchical mode?")
-
                     try:
-                        node = self._create_command_node(value)
+                        new_commands = {
+                            key: self._create_command_node(value)
+                        }
                     except ConfigValidationError as e:
                         raise ConfigValidationError(
                             f"Config error with command {key}: {str(e)}") from e
-                    self._commands[key] = node
                 else:
-                    self._get_command_sections(value)
+                    new_commands = self._get_command_sections(value)
+
+                duplicates = commands.keys() & new_commands.keys()
+                if duplicates:
+                    name = next(iter(duplicates))
+                    raise ConfigValidationError(
+                        f"Two commands in config with {name}. "
+                        "Maybe you meant to use hierarchical mode?")
+
+                commands.update(new_commands)
+
+        return commands

@@ -19,8 +19,15 @@
 # * limitations under the License.
 # *
 #* ******************************************************************************
+yaml_runner:
+  hierarchical: True
 
-import unittest
+top:
+  description: The top layer.
+  one_option:
+    command: "echo {{foo}}"
+    options:
+      foo:
+        short: "f"
+        description: "Value will replace {{foo}} if provided."
 
-class OptionTests(unittest.testcase):
-    pass

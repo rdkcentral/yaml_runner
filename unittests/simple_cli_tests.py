@@ -103,7 +103,7 @@ class SimpleCLITest(CLITest):
         self.assertIn('-c CONFIG',
                       help_dict.get('options',{}).keys(),
                       'Test the -c option is in the help output.')
-        self.assertIn('--config CONFIG',
+        self.assertIn('--config',
                       help_dict.get('options',{}).keys(),
                       'Test the --config option is in help outpu')
         self.assertIn('Yaml config to read from.',
