@@ -42,10 +42,10 @@ class BaseConfigReader(ABC):
         if isinstance(config, dict):
             self._config = config
         else:
-            raise TypeError('Expected config as type: dict')
+            raise ConfigValidationError(f'Expected config as type dict. Got type {type(config)}')
 
     @abstractmethod
-    def get_commands(self, cli_args: list[str]) -> dict[str, CommandNode]:
+    def get_commands(self) -> dict[str, CommandNode]:
         """
         This method takes in the cli args as a list of strings.
         Returns the commands to be run as a list of strings.

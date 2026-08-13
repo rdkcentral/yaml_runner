@@ -151,4 +151,4 @@ class YamlRunner():
             return command_runner.run_commands(built_commands, self._fail_fast)
 
     def get_completion(self, completion_shell: str):
-        self._parser.get_completion(completion_shell)
+        return self._parser.get_completion(completion_shell)

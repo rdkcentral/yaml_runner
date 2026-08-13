@@ -108,6 +108,7 @@ def main():
         cli()
     except YamlRunnerError as e:
         print(f"ERROR: {e}")
+        raise SystemExit(1)
 
 def install():
     if os.getenv('SHELL') == '/bin/bash':

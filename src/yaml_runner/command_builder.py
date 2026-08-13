@@ -38,7 +38,7 @@ def build_commands(parsed: ParsedCommand) -> list[str]:
     return [_render(command, parsed) for command in parsed.commands]
 
 def _render(command_template: str, parsed: ParsedCommand):
-    """Augument command string with passed values.
+    """Augment command string with passed values.
 
     Replace {{key}} in template with values from params and $@ with any extra
     passthrough args.

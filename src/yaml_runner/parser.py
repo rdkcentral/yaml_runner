@@ -39,7 +39,11 @@ class Parser:
             raise InvalidCommandError(f"{e}") from e
 
         data = vars(namespace).copy()
-        commands = data.pop("command")
+        try:
+            commands = data.pop("command")
+        except KeyError:
+            raise InvalidCommandError(
+                "Provided args don't correspond to any known command.")
         passthrough_allowed = data.pop("passthrough_allowed")
 
         if passthrough and not passthrough_allowed:
@@ -72,7 +76,7 @@ class ParserBuilder:
     ) -> Parser:
         """Build and return a parser configured from command definitions."""
         parser = self.parser_cls(prog=self.program, exit_on_error=False)
-        subparser = parser.add_subparsers()
+        subparser = parser.add_subparsers(required=True)
         self._build_recursive(command_nodes=command_nodes, subparser=subparser)
         return Parser(parser)
 
