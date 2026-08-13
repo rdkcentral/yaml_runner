@@ -24,33 +24,30 @@ import re
 
 from .models import ParsedCommand
 
-class CommandBuilder:
-    def build(self, parsed: ParsedCommand) -> list[str]:
-        """Render command templates into concrete command strings by replacing
-        {{key}} in command templates with values in parsed_command.params.
+def build_commands(parsed: ParsedCommand) -> list[str]:
+    """Render command templates into concrete command strings by replacing
+    {{key}} in command templates with values in parsed_command.params.
 
-        Example:
-            parsed_command.command = ["echo {{name}} $@"]
-            parsed_command.params = {"name": "Benji"}
-            parsed_command.passthrough = ["!"]
+    Example:
+        parsed_command.command = ["echo {{name}} $@"]
+        parsed_command.params = {"name": "Benji"}
+        parsed_command.passthrough = ["!"]
 
-            Returns ["echo Benji !"]
-        """
-        commands = []
-        for command in parsed.commands:
-            commands.append(self._render(command, parsed))
-        return commands
+        Returns ["echo Benji !"]
+    """
+    return [_render(command, parsed) for command in parsed.commands]
 
-    def _render(self, command_template: str, parsed: ParsedCommand):
-        """Augument command string with passed values.
+def _render(command_template: str, parsed: ParsedCommand):
+    """Augument command string with passed values.
 
-        Replace {{key}} in template with values from params and $@ with any extra
-        passthrough args.
-        """
-        command_template = command_template.replace("$@", " ".join(parsed.passthrough))
-        rendered = re.sub(
-            r"\{\{(\w+)\}\}",
-            lambda m: parsed.params[m.group(1)] if m.group(1) in parsed.params else "",
-            command_template
-        )
-        return rendered
+    Replace {{key}} in template with values from params and $@ with any extra
+    passthrough args.
+    """
+    command_template = command_template.replace("$@", " ".join(parsed.passthrough))
+
+    rendered = re.sub(
+        r"\{\{(\w+)\}\}",
+        lambda m: parsed.params.get(m.group(1), ""),
+        command_template
+    )
+    return rendered

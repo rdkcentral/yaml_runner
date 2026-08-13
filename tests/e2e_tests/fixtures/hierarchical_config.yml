@@ -55,12 +55,6 @@ run:
         - echo "$@"
       params:
         passthrough: true
-      arguments:
-        argument:
-          description: Third word, only accepts a or b.
-          choices:
-            - a
-            - b
 
 # Since neither of the sections below contain a command key,
 # they will both be ignored.

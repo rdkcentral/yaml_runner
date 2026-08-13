@@ -33,8 +33,5 @@ class ConfigLoadError(ConfigError):
 class ConfigValidationError(ConfigError):
     """Raise on failure to validate config."""
 
-class InvalidArgsError(YamlRunnerError):
-    """Raise when invalid args given."""
-
 class InvalidCommandError(YamlRunnerError):
-    """Raise when an invalid command has been used."""
+    """Raise when an invalid command has been provided."""

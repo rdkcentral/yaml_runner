@@ -125,7 +125,6 @@ class SimpleCLITest(CLITest):
                                 check=False)
         self.assertEqual(result.returncode, 0, 'Test the exit code is zero')
         help_dict = self._help_to_dict(result.stdout)
-        print(help_dict)
         self.assertIn('hello_world',
                       help_dict.get('positionals',{}).keys(),
                       'Test the hello_world choice is in the help message')
@@ -193,12 +192,9 @@ class SimpleCLITest(CLITest):
         self.assertIn('echo_passthrough',
                       help_dict.get('usage',''),
                        'Test the echo_all choice is in the usage')
-        self.assertIn('ARGUMENTS',
-                      help_dict.get('positionals',{}).keys(),
-                      'Test ARGUMENTS is shown as an optional argument.')
-        self.assertIn('Extra arguments for the command.',
-                      help_dict.get('positionals',{}).get('ARGUMENTS',''),
-                      'Test the descriptions for passthough arguments is shown.')
+        self.assertIn('PASSTHROUGH ENABLED',
+                      result.stdout,
+                      'Test user shown passthrough is enabled.')
         self.assertIn('-h',
                       help_dict.get('options',{}).keys(),
                       'Test the -h option is in the output')
@@ -290,6 +286,7 @@ class SimpleCLITest(CLITest):
                                  'fail_fast'],
                                 text=True,
                                 stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
                                 check=False)
         self.assertNotEqual(result.returncode, 0, 'Test the exit code is non-zero')
         split_results = result.stdout.splitlines()

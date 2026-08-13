@@ -33,17 +33,18 @@ class Parser:
         self._parser = parser
 
     def parse(self, args: list[str]) -> ParsedCommand:
-        namespace, remainder = self._parser.parse_known_args(args)
-        if namespace.command is None:
-            raise InvalidCommandError(f"Unknown command passed: {' '.join(args)}")
+        try:
+            namespace, passthrough = self._parser.parse_known_args(args)
+        except argparse.ArgumentError as e:
+            raise InvalidCommandError(f"{e}") from e
 
         data = vars(namespace).copy()
         commands = data.pop("command")
-        passthrough = data.pop("passthrough", [])
+        passthrough_allowed = data.pop("passthrough_allowed")
 
-        if remainder and data.pop("passthrough_allowed") == False:
+        if passthrough and not passthrough_allowed:
             raise InvalidCommandError(
-                f"Extra args passed '{remainder}' and passthrough not enabled.")
+                f"Extra args passed '{passthrough}' and passthrough not enabled.")
 
         return ParsedCommand(
             commands=commands,
@@ -70,7 +71,7 @@ class ParserBuilder:
         command_nodes: dict[str, CommandNode]
     ) -> Parser:
         """Build and return a parser configured from command definitions."""
-        parser = self.parser_cls(prog=self.program)
+        parser = self.parser_cls(prog=self.program, exit_on_error=False)
         subparser = parser.add_subparsers()
         self._build_recursive(command_nodes=command_nodes, subparser=subparser)
         return Parser(parser)
@@ -78,40 +79,67 @@ class ParserBuilder:
     def _build_recursive(
         self,
         subparser: argparse._SubParsersAction,
-        command_nodes: dict[str, CommandNode]
+        command_nodes: dict[str, CommandNode],
+        inherited_flags: dict[str, FlagNode] | None = None,
+        inherited_options: dict[str, OptionNode] | None = None
     ):
-        """Recursively build parser for commands and nested subcommands."""
+        """Recursively build parser for commands and nested subcommands.
+
+        Options and flags are passed down so they are always applicable at the tree leaf.
+
+        This allows users to place all flags and options after the full command path:
+
+            group1 group2 command --flag --option value
+
+        rather than needing to interleave them with subcommands:
+
+            group1 --flag group2 --option value command
+
+        As a result, `group1 group2 command --help` shows all flags and options
+        available to that command.
+        """
+        inherited_flags = inherited_flags or {}
+        inherited_options = inherited_options or {}
+
         for name, command_node in command_nodes.items():
             cmd_parser = subparser.add_parser(
                 name,
                 help=command_node.description,
-                description=command_node.description)
+                description=command_node.description,
+                exit_on_error=False
+            )
+
+            flags = inherited_flags | command_node.flags
+            options = inherited_options | command_node.options
+
             if command_node.command:
                 self._add_command(cmd_parser, command_node)
+                self._add_arguments(cmd_parser, command_node.arguments)
+                self._setup_passthrough(cmd_parser, command_node.passthrough)
+                self._add_flags(cmd_parser, flags)
+                self._add_options(cmd_parser, options)
+
             if command_node.subcommands:
                 cmd_subparser = cmd_parser.add_subparsers()
-                self._build_recursive(cmd_subparser, command_node.subcommands)
+                self._build_recursive(
+                    cmd_subparser,
+                    command_node.subcommands,
+                    flags,
+                    options
+                )
 
     def _add_command(
         self,
         cmd_parser: argparse.ArgumentParser,
         command_node: CommandNode
     ):
-        """Attach command behavior and arguments to a parser."""
-        # Metadata
-        cmd_parser.set_defaults(
-            command=command_node.command, passthrough_allowed=command_node.passthrough)
-
-        # Additional args/options
-        self._add_arguments(cmd_parser, command_node.arguments, command_node.passthrough)
-        self._add_options(cmd_parser, command_node.options)
-        self._add_flags(cmd_parser, command_node.flags)
+        """Attach command behavior to a parser."""
+        cmd_parser.set_defaults(command=command_node.command)
 
     def _add_arguments(
         self,
         cmd_parser: argparse.ArgumentParser,
         arguments: dict[str, ArgumentNode],
-        passthrough: bool
     ):
         for name, argument in arguments.items():
             cmd_parser.add_argument(
@@ -119,12 +147,22 @@ class ParserBuilder:
                 choices=argument.choices,
                 help=argument.description
             )
+
+    def _setup_passthrough(
+            self,
+            cmd_parser: argparse.ArgumentParser,
+            passthrough: bool
+    ):
+        """Setup passthrough behaviour for a parser.
+
+        Adds metadata to tell Parser() to use argparses builtin remainder args.
+        Adds a note to the end of the help message to tell the user passthrough is enabled.
+        """
+        cmd_parser.set_defaults(passthrough_allowed=passthrough)
         if passthrough:
-            cmd_parser.add_argument(
-                'passthrough',
-                action='store',
-                help='Extra arguments for the command.',
-                nargs=argparse.REMAINDER,
+            cmd_parser.epilog = (
+               "PASSTHROUGH ENABLED: Any additional arguments are passed through to the "
+               "underlying command."
             )
 
     def _add_options(

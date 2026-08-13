@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 #** *****************************************************************************
 # *
 # * If not stated otherwise in this file or this component's LICENSE file the
@@ -29,6 +28,7 @@ from ..exceptions import ConfigValidationError
 from ..models import CommandNode
 
 class BaseConfigReader(ABC):
+    """Takes a config in dictionary form and extracts into concrete models."""
     def __init__(self, config: dict):
         self.config = config
 
@@ -76,3 +76,28 @@ class BaseConfigReader(ABC):
             )
         except ValidationError as e:
             raise ConfigValidationError(f"{str(e)}") from e
+
+    def _verify_duplicate_flags_or_options(self, commands: dict[str, CommandNode]):
+        """Walk down each branch of the tree and error if any collisions
+        of flag or option names occur.
+        """
+        def walk(node: CommandNode, used: set[str]):
+            current = set()
+            current |= set(node.flags.keys())
+            current |= set(node.options.keys())
+            current |= {f.short for f in node.flags.values() if f.short is not None}
+            current |= {o.short for o in node.options.values() if o.short is not None}
+
+            overlap = current & used
+            if overlap:
+                raise ConfigValidationError(
+                    "A command tree can't have a duplicate of a flag or option. "
+                    f"Duplicate identifier(s) detected: {overlap}")
+
+            new_used = used | current
+
+            for sub in node.subcommands.values():
+                walk(sub, new_used)
+
+        for cmd in commands.values():
+            walk(cmd, set())

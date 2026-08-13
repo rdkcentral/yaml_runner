@@ -24,6 +24,7 @@
 import argparse
 import io
 import os
+from typing import TextIO
 
 import yaml
 try:
@@ -31,9 +32,9 @@ try:
 except ImportError:
     from yaml import SafeLoader
 
-from .command_builder import CommandBuilder
-from . import command_runner
+from . import command_builder, command_runner
 from .config_readers import HierarchicalConfigReader, SimpleConfigReader
+from .exceptions import ConfigLoadError
 from .parser import ParserBuilder
 from .models import CompletedCommand
 
@@ -63,12 +64,11 @@ class YamlRunner():
         if hierarchical:
             self._config_reader_class = HierarchicalConfigReader
         else:
-            self._config_reader = SimpleConfigReader
+            self._config_reader_class = SimpleConfigReader
 
         self._program = program
         self._fail_fast = fail_fast
         self._parser_builder = ParserBuilder(parser_class, program)
-        self._command_builder = CommandBuilder()
         self.config = config
 
     @property
@@ -87,6 +87,19 @@ class YamlRunner():
         self._config_reader = reader
         self._parser = parser
 
+    def _load_yaml(self, stream: TextIO):
+        try:
+            return yaml.load(stream, SafeLoader)
+        except yaml.YAMLError as e:
+            raise ConfigLoadError(f"Failed to parse YAML config: {e}") from e
+
+    def _load_yaml_file(self, file_path: str):
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                return self._load_yaml(f)
+        except FileNotFoundError as e:
+            raise ConfigLoadError(f"Failed to find config file {file_path}") from e
+
     def _config_to_dict(self, config: dict|io.IOBase|str) -> dict:
         """Processes the incoming config and returns the dictionary
 
@@ -95,50 +108,46 @@ class YamlRunner():
                 as a dictionary, as an open file or as a string path to the file.
 
         Raises:
-            TypeError: When config is not a valid type.
+            ConfigLoadError: When config is not a valid type.
 
         Returns:
-            dict: Parsed config.
+            dict: Config in dictionary form.
         """
-        if isinstance(config,str):
-            with open(config, 'r', encoding='utf-8') as f:
-                config_dict = yaml.load(f,SafeLoader)
+        if isinstance(config, str):
+            return self._load_yaml_file(config)
         elif isinstance(config, io.IOBase):
             config.seek(0)
-            config_dict = yaml.load(config,SafeLoader)
+            return self._load_yaml(config)
         elif isinstance(config, dict):
-            config_dict = config
+            return config
         else:
-            raise TypeError(
+            raise ConfigLoadError(
                 f'Config argument must of type IO, str or dict. Got type: [{type(config)}]')
-        return config_dict
 
     def run(self, args: list[str], config: dict|io.IOBase|str = None) -> list[CompletedCommand]:
         """
-        This function runs a script with specified configuration and arguments, processing command line
-        arguments and executing commands.
+        This function runs a script with specified configuration and arguments,
+        processing command line arguments and executing commands.
 
         Args:
-            config (dict|io.IOBase|str): Yaml configuration of commands that can be run. Defaults to None.
-                If None, config is expected to be passed in from command line with `--config` option.
-            args (list): The arguments passed to the script. Defaults to None.
-                If None, external args are processed and used instead.
+            args (list): The arguments passed to the script.
+            config (dict|io.IOBase|str): Yaml configuration of commands that can be run.
+                Defaults to None. If None, config comes from class self attributes.
 
         Returns:
-            tuple: Returns a tuple containing three lists: `stdout_list`, `stderr_list`, and `exit_code_list`.
-              Each list contains the respective outputs (stdout, stderr,
-              and exit code) of running the command(s) specified in the `self.commands` attribute.
+            list[CompletedCommand]: Returns a list of information about each command
+                completed by yaml_runner.
         """
-        if config:
+        if config is not None:
             self.config = config
 
         if completion_env := os.getenv('_YAML_RUNNER_COMPLETE'):
             completion = self._parser.get_completion(completion_env)
             print('\n'.join(completion))
-            return [CompletedCommand('', '', 0)]
+            return [CompletedCommand(0, '', '')]
         else:
             parsed_command = self._parser.parse(args)
-            built_commands = self._command_builder.build(parsed_command)
+            built_commands = command_builder.build_commands(parsed_command)
             return command_runner.run_commands(built_commands, self._fail_fast)
 
     def get_completion(self, completion_shell: str):
