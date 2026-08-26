@@ -29,10 +29,24 @@ from .models import ArgumentNode, CommandNode, FlagNode, OptionNode, ParsedComma
 from .exceptions import InvalidCommandError
 
 class Parser:
+    """Parses command-line arguments using a parser built by ParserBuilder.
+
+    ParserBuilder adds metadata to each command parser that identifies the command
+    to run and whether extra arguments can be passed through. Parser uses this
+    metadata when turning the provided arguments into a ParsedCommand.
+    """
     def __init__(self, parser: argparse.ArgumentParser):
         self._parser = parser
 
     def parse(self, args: list[str]) -> ParsedCommand:
+        """Parse the provided arguments and return the command to run.
+
+        Uses metadata added by ParserBuilder to determine the command and whether
+        any extra arguments are allowed.
+
+        Raises InvalidCommandError if no command is found or unexpected extra
+        arguments are provided.
+        """
         try:
             namespace, passthrough = self._parser.parse_known_args(args)
         except argparse.ArgumentError as e:
