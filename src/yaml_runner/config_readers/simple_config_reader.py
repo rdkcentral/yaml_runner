@@ -37,7 +37,6 @@ class SimpleConfigReader(BaseConfigReader):
 
     def get_commands(self) -> dict[str, CommandNode]:
         commands = self._get_command_sections(self._config)
-        self._verify_duplicate_flags_or_options(commands)
         return commands
 
     def _get_command_sections(self, parsed_config: dict) -> dict[str, CommandNode]:

@@ -32,7 +32,6 @@ class HierarchicalConfigReader(BaseConfigReader):
         commands: dict[str, CommandNode] = {}
         for key, value in stripped_config.items():
             commands[key] = self._build_command_node(value, f"{key}.")
-        self._verify_duplicate_flags_or_options(commands)
         return commands
 
     def _strip_config(self, config: dict) -> dict:

@@ -25,7 +25,7 @@ import os
 
 from argparse_completion import argparse_completion
 
-from .models import ArgumentNode, CommandNode, FlagNode, OptionNode, ParsedCommand
+from .models import ArgumentNode, CommandNode, ParsedCommand
 from .exceptions import InvalidCommandError
 
 class Parser:
@@ -98,24 +98,8 @@ class ParserBuilder:
         self,
         subparser: argparse._SubParsersAction,
         command_nodes: dict[str, CommandNode],
-        inherited_flags: dict[str, FlagNode] | None = None,
-        inherited_options: dict[str, OptionNode] | None = None
     ):
-        """Recursively build parser for commands and nested subcommands.
-
-        Options and flags are passed down so they are always applicable at the tree leaf.
-
-        This allows users to place all flags and options after the full command path:
-
-            group1 group2 command --flag --option value
-
-        rather than needing to interleave them with subcommands:
-
-            group1 --flag group2 --option value command
-
-        As a result, `group1 group2 command --help` shows all flags and options
-        available to that command.
-        """
+        """Recursively build parser for commands and nested subcommands."""
         inherited_flags = inherited_flags or {}
         inherited_options = inherited_options or {}
 
@@ -127,23 +111,16 @@ class ParserBuilder:
                 exit_on_error=False
             )
 
-            flags = inherited_flags | command_node.flags
-            options = inherited_options | command_node.options
-
             if command_node.command:
                 self._add_command(cmd_parser, command_node)
                 self._add_arguments(cmd_parser, command_node.arguments)
                 self._setup_passthrough(cmd_parser, command_node.passthrough)
-                self._add_flags(cmd_parser, flags)
-                self._add_options(cmd_parser, options)
 
             if command_node.subcommands:
                 cmd_subparser = cmd_parser.add_subparsers()
                 self._build_recursive(
                     cmd_subparser,
                     command_node.subcommands,
-                    flags,
-                    options
                 )
 
     def _add_command(
@@ -181,32 +158,4 @@ class ParserBuilder:
             cmd_parser.epilog = (
                "PASSTHROUGH ENABLED: Any additional arguments are passed through to the "
                "underlying command."
-            )
-
-    def _add_options(
-            self, cmd_parser: argparse.ArgumentParser, options: dict[str, OptionNode]):
-        """Add options to a parser."""
-        for name, option in options.items():
-            names = [f"--{name}"]
-            if option.short:
-                names.append(f"-{option.short}")
-
-            cmd_parser.add_argument(
-                *names,
-                help=option.description,
-                required=option.required
-            )
-
-    def _add_flags(self, cmd_parser: argparse.ArgumentParser, flags: dict[str, FlagNode]):
-        """Add flags to a parser."""
-        for name, flag in flags.items():
-            names = [f"--{name}"]
-            if flag.short:
-                names.append(f"-{flag.short}")
-
-            cmd_parser.add_argument(
-                *names,
-                help=flag.description,
-                action='store_const',
-                const=flag.value
             )

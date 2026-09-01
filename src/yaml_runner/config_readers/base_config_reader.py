@@ -69,35 +69,8 @@ class BaseConfigReader(ABC):
                 description = data.get("description"),
                 command = _normalize_command(data.get("command")),
                 arguments = data.get("arguments") or {},
-                options = data.get("options") or {},
-                flags = data.get("flags") or {},
                 passthrough = params.get("passthrough", False),
                 subcommands = subcommands or {}
             )
         except ValidationError as e:
             raise ConfigValidationError(f"{str(e)}") from e
-
-    def _verify_duplicate_flags_or_options(self, commands: dict[str, CommandNode]):
-        """Walk down each branch of the tree and error if any collisions
-        of flag or option names occur.
-        """
-        def walk(node: CommandNode, used: set[str]):
-            current = set()
-            current |= set(node.flags.keys())
-            current |= set(node.options.keys())
-            current |= {f.short for f in node.flags.values() if f.short is not None}
-            current |= {o.short for o in node.options.values() if o.short is not None}
-
-            overlap = current & used
-            if overlap:
-                raise ConfigValidationError(
-                    "A command tree can't have a duplicate of a flag or option. "
-                    f"Duplicate identifier(s) detected: {overlap}")
-
-            new_used = used | current
-
-            for sub in node.subcommands.values():
-                walk(sub, new_used)
-
-        for cmd in commands.values():
-            walk(cmd, set())

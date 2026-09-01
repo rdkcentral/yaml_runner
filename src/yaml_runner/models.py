@@ -26,33 +26,13 @@ from pydantic import BaseModel, Field, model_validator
 
 # Fields a command can contain.
 COMMAND_SECTIONS = frozenset(
-    {"description", "command", "arguments", "options", "flags", "params"})
+    {"description", "command", "arguments", "params"})
 
 class ArgumentNode(BaseModel):
-    """Represents arguments for a command or group."""
+    """Represents arguments for a command."""
     choices: list[str] | None = None
     description: str | None = None
 
-class OptionNode(BaseModel):
-    """Represents an option for a command or group."""
-    short: str | None = None
-    required: bool = False
-    description: str | None = None
-
-class FlagNode(BaseModel):
-    """Represents a flag for a command or group."""
-    value: str
-    short: str | None = None
-    description: str | None = None
-
-# NOTE: CommandNode validates only its own state. Tree-level validation, such as
-# detecting duplicate flags/options across a command branch, is currently handled
-# by the config readers.
-#
-# If more tree-level validation is needed in future, consider introducing a
-# CommandTree(BaseModel). This could own validation that depends on relationships
-# between nodes, keeping CommandNode responsible only for local validation.
-# Currently, the extra abstraction does not seem justified.
 class CommandNode(BaseModel):
     """Represents a node describing a command or a group.
 
@@ -67,8 +47,6 @@ class CommandNode(BaseModel):
     command: list[str] | None = None
     arguments: dict[str, ArgumentNode] = Field(default_factory=dict)
     passthrough: bool = False
-    options: dict[str, OptionNode] = Field(default_factory=dict)
-    flags: dict[str, FlagNode] = Field(default_factory=dict)
     subcommands: dict[str, "CommandNode"] = Field(default_factory=dict)
 
     @model_validator(mode="after")
