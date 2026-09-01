@@ -100,9 +100,6 @@ class ParserBuilder:
         command_nodes: dict[str, CommandNode],
     ):
         """Recursively build parser for commands and nested subcommands."""
-        inherited_flags = inherited_flags or {}
-        inherited_options = inherited_options or {}
-
         for name, command_node in command_nodes.items():
             cmd_parser = subparser.add_parser(
                 name,

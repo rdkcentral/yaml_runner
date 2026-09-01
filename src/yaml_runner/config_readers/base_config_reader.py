@@ -68,7 +68,7 @@ class BaseConfigReader(ABC):
             return CommandNode(
                 description = data.get("description"),
                 command = _normalize_command(data.get("command")),
-                arguments = data.get("arguments") or {},
+                arguments = data.get("args") or {},
                 passthrough = params.get("passthrough", False),
                 subcommands = subcommands or {}
             )

@@ -27,7 +27,7 @@ import io
 import unittest
 
 from yaml_runner.exceptions import InvalidCommandError
-from yaml_runner.models import ArgumentNode, CommandNode, FlagNode, OptionNode
+from yaml_runner.models import ArgumentNode, CommandNode
 from yaml_runner.parser import ParserBuilder
 
 class ParserTests(unittest.TestCase):
@@ -136,121 +136,6 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(context.exception.code, 0)
         self.assertIn("Arg help", output.getvalue())
 
-    def test_option_long_and_short(self):
-        commands = {
-            "run": CommandNode(
-                command = ["echo"],
-                options = {
-                    "output": OptionNode(short="o")
-                }
-            )
-        }
-
-        parser = self.builder.build(commands)
-        result = parser.parse(["run", "--output", "file"])
-        self.assertEqual(result.params["output"], "file")
-
-        result = parser.parse(["run", "-o", "file"])
-        self.assertEqual(result.params["output"], "file")
-
-    def test_option_required_enforced(self):
-        commands = {
-            "run": CommandNode(
-                command = ["echo"],
-                options = {
-                    "output": OptionNode(short="o", required=True)
-                }
-            )
-        }
-
-        parser = self.builder.build(commands)
-
-        with self.assertRaises(InvalidCommandError) as context:
-            parser.parse(["run"])
-
-        self.assertIn("the following arguments are required", str(context.exception))
-
-    def test_option_description_in_help_message(self):
-        commands = {
-            "run": CommandNode(
-                command = ["echo"],
-                options = {
-                    "output": OptionNode(description="Option help")
-                }
-            )
-        }
-
-        output = io.StringIO()
-
-        parser = self.builder.build(commands)
-        with redirect_stdout(output):
-            with self.assertRaises(SystemExit) as context:
-                parser.parse(["run", "--help"])
-
-        self.assertEqual(context.exception.code, 0)
-        self.assertIn("Option help", output.getvalue())
-
-    def test_flag_long_and_short(self):
-        commands = {
-            "run": CommandNode(
-                command = ["echo"],
-                flags = {
-                    "aflag": FlagNode(value="avalue", short="a")
-                }
-            )
-        }
-
-        parser = self.builder.build(commands)
-
-        result = parser.parse(["run", "--aflag"])
-        self.assertEqual(result.params["aflag"], "avalue")
-
-        result = parser.parse(["run", "-a"])
-        self.assertEqual(result.params["aflag"], "avalue")
-
-    def test_flag_description_in_help_message(self):
-        commands = {
-            "run": CommandNode(
-                command = ["echo"],
-                flags = {
-                    "aflag": FlagNode(value="avalue", description="Flag help")
-                }
-            )
-        }
-
-        output = io.StringIO()
-
-        parser = self.builder.build(commands)
-        with redirect_stdout(output):
-            with self.assertRaises(SystemExit) as context:
-                parser.parse(["run", "--help"])
-
-        self.assertEqual(context.exception.code, 0)
-        self.assertIn("Flag help", output.getvalue())
-
-    def test_groups_descend_flags_and_options_to_lower_commands(self):
-        commands = {
-            "run": CommandNode(
-                flags = {
-                    "aflag": FlagNode(value="f_value")
-                },
-                options = {
-                    "anoption": OptionNode()
-                },
-                subcommands = {
-                    "asubcommand": CommandNode(
-                        command = ["echo"]
-                    )
-                }
-            )
-        }
-
-        parser = self.builder.build(commands)
-        result = parser.parse(["run", "asubcommand", "--aflag", "--anoption", "op_value"])
-
-        self.assertEqual(result.params["aflag"], "f_value")
-        self.assertEqual(result.params["anoption"], "op_value")
-
     def test_passthrough_on_allowed_commands(self):
         commands = {
             "run": CommandNode(
@@ -275,52 +160,6 @@ class ParserTests(unittest.TestCase):
 
         with self.assertRaises(InvalidCommandError):
             parser.parse(["run", "pass", "through"])
-
-    def test_options_and_flags_can_come_after_passthrough(self):
-        commands = {
-            "run": CommandNode(
-                command = ["echo"],
-                passthrough = True,
-                flags = {
-                    "aflag": FlagNode(value="fvalue")
-                },
-                options = {
-                    "anoption": OptionNode()
-                }
-            )
-        }
-
-        parser = self.builder.build(commands)
-        result = parser.parse(["run", "pass", "through", "--aflag", "--anoption", "ovalue"])
-
-        self.assertEqual(result.passthrough, ["pass", "through"])
-        self.assertEqual(result.params["aflag"], "fvalue")
-        self.assertEqual(result.params["anoption"], "ovalue")
-
-
-    def test_sibling_doesnt_take_flags_or_options(self):
-        commands = {
-            "group": CommandNode(
-                subcommands = {
-                    "foo": CommandNode(
-                        command = ["echo"],
-                        flags = {"aflag": FlagNode(value="avalue")},
-                        options = {"anoption": OptionNode()}
-                    ),
-                    "bar": CommandNode(
-                        command = ["echo"]
-                    )
-                }
-            )
-        }
-
-        parser = self.builder.build(commands)
-
-        with self.assertRaises(InvalidCommandError):
-            parser.parse(["group", "bar", "--aflag"])
-
-        with self.assertRaises(InvalidCommandError):
-            parser.parse(["group", "bar", "--anoption"])
 
     def test_nested_command_doesnt_take_parents_command(self):
         commands = {

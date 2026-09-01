@@ -26,7 +26,7 @@ from pydantic import BaseModel, Field, model_validator
 
 # Fields a command can contain.
 COMMAND_SECTIONS = frozenset(
-    {"description", "command", "arguments", "params"})
+    {"description", "command", "args", "params"})
 
 class ArgumentNode(BaseModel):
     """Represents arguments for a command."""

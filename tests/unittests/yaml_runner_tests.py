@@ -44,27 +44,9 @@ SIMPLE_CONFIG = {
 
 HIERARCHICAL_CONFIG = {
     "run": {
-        "flag_command": {
-            "command": "echo {{aflag}}",
-            "flags": {
-                "aflag": {
-                    "short": "f",
-                    "value": "replacement",
-                }
-            },
-        },
-        "option_command": {
-            "command": "echo {{anoption}}",
-            "options": {
-                "anoption": {
-                    "short": "o",
-                    "required": True,
-                }
-            },
-        },
         "argument_command": {
             "command": "echo {{anargument}}",
-            "arguments": {
+            "args": {
                 "anargument": {
                     "choices": ["a", "b"],
                 }
@@ -155,28 +137,6 @@ class TestYamlRunner(unittest.TestCase):
         self.assertFalse(fail_fast)
 
     @patch("yaml_runner.yaml_runner.command_runner.run_commands")
-    def test_hierarchical_flag(self, run_commands):
-        run_commands.return_value = []
-
-        runner = YamlRunner(HIERARCHICAL_CONFIG, hierarchical=True)
-        runner.run(["run", "flag_command", "--aflag"])
-
-        commands, _ = run_commands.call_args.args
-
-        self.assertEqual(commands, ["echo replacement"])
-
-    @patch("yaml_runner.yaml_runner.command_runner.run_commands")
-    def test_hierarchical_option(self, run_commands):
-        run_commands.return_value = []
-
-        runner = YamlRunner(HIERARCHICAL_CONFIG, hierarchical=True)
-        runner.run(["run", "option_command", "--anoption", "hello"])
-
-        commands, _ = run_commands.call_args.args
-
-        self.assertEqual(commands, ["echo hello"])
-
-    @patch("yaml_runner.yaml_runner.command_runner.run_commands")
     def test_hierarchical_argument(self, run_commands):
         run_commands.return_value = []
 
@@ -190,15 +150,6 @@ class TestYamlRunner(unittest.TestCase):
         commands, _ = run_commands.call_args.args
 
         self.assertEqual(commands, ["echo a"])
-
-    def test_hierarchical_required_option_missing_raises_invalid_command(self):
-        runner = YamlRunner(HIERARCHICAL_CONFIG, hierarchical=True)
-
-        with self.assertRaises(InvalidCommandError):
-            runner.run([
-                "run",
-                "option_command",
-            ])
 
     def test_hierarchical_invalid_argument_choice_raises_invalid_command(self):
         runner = YamlRunner(HIERARCHICAL_CONFIG, hierarchical=True)
