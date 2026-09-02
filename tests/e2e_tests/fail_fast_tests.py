@@ -24,17 +24,17 @@
 
 This module contains unit tests for `yaml_runner`.
 The tests also rely on a configuration file
-`examples/hierarchical_config.yml`.
+`examples/fail_fast_config.yml`.
 
 The tests verify the behavior of the script in the following scenarios:
 
-* Running the script with the --config option and --help confirms that the hierarchical engine
-is used to parse the configuration, and only valid commands (e.g., run) are exposed.
-(Test: test_1_check_hierarchical_engine_is_used)
+* Running the script with the --config option and the list command
+executes all commands in the list sequentially, confirming correct order and output.
+(Test: test_1_check_list_command)
 
-* Running the script with the --config option and a nested command sequence
-(e.g., run example nested) executes the correct nested command and prints the expected output.
-(Test: test_2_check_nesting)
+* Running the script with the --config option and the list_failure command
+continues executing subsequent commands even after a failure, as fail_fast is disabled.
+(Test: test_2_check_list_failure)
 """
 
 from os import path
@@ -46,58 +46,61 @@ from cli_test_base import CLITest
 MY_PATH = path.abspath(__file__)
 MY_DIR = path.dirname(MY_PATH)
 
-class HierarchicalCLITest(CLITest):
+class FailFastCLITest(CLITest):
     """Test class for the yaml_runner script."""
-    test_config_path = path.join(MY_DIR, '../examples/hierarchical_config.yml')
+    test_config_path = path.join(MY_DIR, 'fixtures/fail_fast_config.yml')
 
-    def test_1_check_hierarchical_engine_is_used(self):
+    def test_1_check_list_command(self):
         """
-        Test the hierarchical engine has been used to process
-        the config.
+        Test all commands are run from a command list in the config.
         """
         result = subprocess.run(['yaml_runner',
                                               '-c',
                                               self.test_config_path,
-                                              '--help'],
+                                              'list'],
                                               text=True,
                                               stdout=subprocess.PIPE,
                                               stderr=subprocess.STDOUT,
                                               check=False)
-        help_dict = self._help_to_dict(result.stdout)
-        self.assertIn('run',
-                      help_dict.get('positionals',{}).keys(),
-                      'Test that the run option is in the positional args.')
-        self.assertEqual('Run a command.',
-                         help_dict.get('positionals',{}).get('run',''),
-                         'Test the description for run is shown.')
-        self.assertNotIn('unrecognised',
-                         help_dict.get('positionals',{}).keys(),
-                         'Test that unrecognised has not been parsed as a positional')
-        self.assertNotIn('unrecognised_nested',
-                         help_dict.get('positionals',{}).keys(),
-                         'Test that unrecognised has not been parsed as a positional')
+        self.assertEqual(result.returncode, 0, 'Test the exit code is zero')
+        split_results = result.stdout.splitlines()
+        self.assertEqual('echo 1',
+                         split_results[0].strip(),
+                         'Test the first command in the list ran first')
+        self.assertEqual('echo 2',
+                         split_results[1].strip(),
+                         'Test the second command in the list ran second')
+        self.assertEqual('echo 3',
+                         split_results[2].strip(),
+                         'Test the third command in the list ran third')
+        self.assertEqual('echo 4',
+                         split_results[3].strip(),
+                         'Test the last command in the list ran last')
 
-    def test_2_check_nesting(self):
+    def test_2_check_list_failure(self):
         """
-        Check that running commands following the nesting in the
-        config works correctly.
+        Check that the list of commands continue to run after a failure,
+        with the fail_fast option set to false.
         """
         result = subprocess.run(['yaml_runner',
                                               '-c',
                                               self.test_config_path,
-                                              'run',
-                                              'example',
-                                              'nested'],
+                                              'list_failure'],
                                               text=True,
                                               stdout=subprocess.PIPE,
                                               stderr=subprocess.STDOUT,
                                               check=False)
-        self.assertEqual(result.returncode,
-                         0,
-                         'Test the command returned an 0 exit code.')
-        self.assertEqual('This is the nested command',
-                        result.stdout.strip(),
-                        'Test the nested command printed correctly')
+        self.assertNotEqual(result.returncode, 0, 'Test the exit code is not zero')
+        split_results = result.stdout.splitlines()
+        self.assertEqual('echo 1',
+                         split_results[0].strip(),
+                         'Test the first command in the list ran first')
+        self.assertIn('echo 3',
+                      split_results[2].strip(),
+                      'Test the third command in the list ran thrid')
+        self.assertIn('echo 4',
+                      split_results[-1].strip(),
+                      'Test the last command in the list ran last')
 
 if __name__ == '__main__':
     unittest.main()

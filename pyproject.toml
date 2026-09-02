@@ -8,7 +8,8 @@ version = "2.2.0"
 dependencies = [
     "importlib_resources>=7.1.0",
     "PyYAML>=6.0",
-    "argparse_completion @ git+https://github.com/rdkcentral/argparse_completion.git@1.0.0"
+    "argparse_completion @ git+https://github.com/rdkcentral/argparse_completion.git@1.0.0",
+    "pydantic>=2.10"
 ]
 
 [project.scripts]
