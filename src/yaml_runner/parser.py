@@ -62,7 +62,7 @@ class Parser:
 
         if passthrough and not passthrough_allowed:
             raise InvalidCommandError(
-                f"Extra args passed '{passthrough}' and passthrough not enabled.")
+                f"Unknown arguments passed in '{passthrough}'.")
 
         return ParsedCommand(
             commands=commands,

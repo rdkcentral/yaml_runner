@@ -31,7 +31,7 @@ class HierarchicalConfigReader(BaseConfigReader):
 
         commands: dict[str, CommandNode] = {}
         for key, value in stripped_config.items():
-            commands[key] = self._build_command_node(value, f"{key}.")
+            commands[key] = self._build_command_node(value, key)
         return commands
 
     def _strip_config(self, config: dict) -> dict:
@@ -97,5 +97,5 @@ class HierarchicalConfigReader(BaseConfigReader):
             if key in COMMAND_SECTIONS:
                 continue
 
-            subcommands[key] = self._build_command_node(value, path + key + ".")
+            subcommands[key] = self._build_command_node(value, path + "." + key)
         return subcommands

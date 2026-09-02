@@ -69,4 +69,7 @@ run:
         description: This description for the arg shows in the help message.
       name:
         description: Must choose one of the names provided in choices.
-        choices: ["Jane", "Sam", "Lisa"]
+        choices:
+          - Jane
+          - Sam
+          - Lisa
