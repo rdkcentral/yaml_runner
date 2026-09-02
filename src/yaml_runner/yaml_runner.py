@@ -155,7 +155,7 @@ class YamlRunner():
         self,
         args: list[str],
         config: dict|io.IOBase|str = None
-    ) -> tuple[list[str], list[str], list[str]]:
+    ) -> tuple[list[str], list[str], list[int]]:
         """Run commands and return results using the legacy return format.
 
         This method is retained for backwards compatibility. New code should
