@@ -80,7 +80,7 @@ def cli():
         yr = YamlRunner(cfg,
                         program='yaml_runner',
                         **yr_settings)
-        completed_commands = yr.run(yaml_args)
+        completed_commands = yr.execute(yaml_args)
         raise SystemExit(max(completed_commands).exit_code)
     else:
         raise ConfigLoadError(f"File not found: {cli_args.config[0]}")

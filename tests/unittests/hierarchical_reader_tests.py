@@ -46,7 +46,7 @@ class HierarchicalConfigReaderTests(unittest.TestCase):
     def test_command_groups_cant_take_arguments(self):
         config = {
             "group": {
-                "arguments": {
+                "args": {
                     "invalid_argument": {
                         "description": "this should be invalid as it belongs to a group"
                     }
@@ -64,7 +64,7 @@ class HierarchicalConfigReaderTests(unittest.TestCase):
         config = {
             "command_with_sub": {
                 "command": "echo I have a subcommand",
-                "arguments": {
+                "args": {
                     "invalid_argument": {
                         "description": "A command with a subcommand cant take arguments"
                     }

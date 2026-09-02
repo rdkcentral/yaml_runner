@@ -124,7 +124,8 @@ class YamlRunner():
             raise ConfigLoadError(
                 f'Config argument must of type IO, str or dict. Got type: [{type(config)}]')
 
-    def run(self, args: list[str], config: dict|io.IOBase|str = None) -> list[CompletedCommand]:
+    def execute(
+            self, args: list[str], config: dict|io.IOBase|str = None) -> list[CompletedCommand]:
         """
         This function runs a script with specified configuration and arguments,
         processing command line arguments and executing commands.
@@ -149,6 +150,27 @@ class YamlRunner():
             parsed_command = self._parser.parse(args)
             built_commands = command_builder.build_commands(parsed_command)
             return command_runner.run_commands(built_commands, self._fail_fast)
+
+    def run(
+        self,
+        args: list[str],
+        config: dict|io.IOBase|str = None
+    ) -> tuple[list[str], list[str], list[str]]:
+        """Run commands and return results using the legacy return format.
+
+        This method is retained for backwards compatibility. New code should
+        prefer :meth:`execute`.
+
+        Returns:
+            A tuple containing stdout, stderr, and exit code lists, respectively.
+        """
+        results = self.execute(args, config)
+
+        return (
+            [r.stdout for r in results],
+            [r.stderr for r in results],
+            [r.exit_code for r in results]
+        )
 
     def get_completion(self, completion_shell: str):
         return self._parser.get_completion(completion_shell)
