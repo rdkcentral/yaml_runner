@@ -48,14 +48,14 @@ MY_DIR = path.dirname(MY_PATH)
 
 class HierarchicalCLITest(CLITest):
     """Test class for the yaml_runner script."""
-    test_config_path = path.join(MY_DIR, '../examples/hierarchical_config.yml')
+    test_config_path = path.join(MY_DIR, 'fixtures/hierarchical_config.yml')
 
     def test_1_check_hierarchical_engine_is_used(self):
         """
         Test the hierarchical engine has been used to process
         the config.
         """
-        result = subprocess.run([self.yaml_runner_script,
+        result = subprocess.run(['yaml_runner',
                                               '-c',
                                               self.test_config_path,
                                               '--help'],
@@ -82,7 +82,7 @@ class HierarchicalCLITest(CLITest):
         Check that running commands following the nesting in the
         config works correctly.
         """
-        result = subprocess.run([self.yaml_runner_script,
+        result = subprocess.run(['yaml_runner',
                                               '-c',
                                               self.test_config_path,
                                               'run',

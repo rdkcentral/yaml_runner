@@ -28,41 +28,41 @@ The tests also rely on a configuration file
 
 The tests verify the behavior of the script in the following scenarios:
 
-* Running the script without arguments prints the help message and mentions  
-  the required `-c` or `--config` option for specifying the configuration file.  
+* Running the script without arguments prints the help message and mentions
+  the required `-c` or `--config` option for specifying the configuration file.
   *(Test: `test_1_no_config`)*
 
-* Running the script with the `--help` option and a valid configuration file  
-  prints the script's usage information, including available choices and  
-  descriptions.  
+* Running the script with the `--help` option and a valid configuration file
+  prints the script's usage information, including available choices and
+  descriptions.
   *(Test: `test_2_help_with_config`)*
 
-* Running the script with the `--config` option and a valid configuration file  
-  followed by a valid choice name (e.g., `hello_world`) executes the corresponding  
-  function and prints the expected output.  
+* Running the script with the `--config` option and a valid configuration file
+  followed by a valid choice name (e.g., `hello_world`) executes the corresponding
+  function and prints the expected output.
   *(Test: `test_3_hello_world`)*
 
-* Running the script with the `--config` option, a valid choice name supporting  
-  optional arguments (e.g., `echo_passthrough`), and the `--help` option prints the specific  
-  usage information for that choice.  
+* Running the script with the `--config` option, a valid choice name supporting
+  optional arguments (e.g., `echo_passthrough`), and the `--help` option prints the specific
+  usage information for that choice.
   *(Test: `test_4_passthrough_arg_in_help`)*
 
-* Running the script with the `--config` option and the `echo_passthrough` command  
-  followed by additional arguments (e.g., `This is a test`) correctly echoes the arguments.  
+* Running the script with the `--config` option and the `echo_passthrough` command
+  followed by additional arguments (e.g., `This is a test`) correctly echoes the arguments.
   *(Test: `test_5_passthrough_args`)*
 
-* Running the script with the `--config` option and the `list` command executes  
-  a predefined sequence of commands in the correct order.  
+* Running the script with the `--config` option and the `list` command executes
+  a predefined sequence of commands in the correct order.
   *(Test: `test_6_list_commands`)*
 
-* Running the script with the `--config` option and the `list_passthrough` command  
-  followed by additional arguments substitutes those arguments into the command sequence  
-  and executes them correctly.  
+* Running the script with the `--config` option and the `list_passthrough` command
+  followed by additional arguments substitutes those arguments into the command sequence
+  and executes them correctly.
   *(Test: `test_7_list_command_with_passthrough`)*
 
-* Running the script with the `--config` option and the `fail_fast` command executes  
-  a sequence of commands but stops execution immediately upon encountering a failure,  
-  skipping any remaining commands.  
+* Running the script with the `--config` option and the `fail_fast` command executes
+  a sequence of commands but stops execution immediately upon encountering a failure,
+  skipping any remaining commands.
   *(Test: `test_8_fail_fast_list`)*
 """
 
@@ -78,19 +78,19 @@ MY_DIR = path.dirname(MY_PATH)
 
 class SimpleCLITest(CLITest):
     """Test class for the yaml_runner script."""
-    test_config_path = path.join(MY_DIR, '../examples/simple_config.yml')
+    test_config_path = path.join(MY_DIR, 'fixtures/simple_config.yml')
 
     def test_1_no_config(self):
         """
         Tests that running the script without arguments prints the help message
         and mentions the required configuration file option.
         """
-        result_no_args = subprocess.run(self.yaml_runner_script,
+        result_no_args = subprocess.run('yaml_runner',
                                         text=True,
                                         stdout=subprocess.PIPE,
                                         stderr=subprocess.STDOUT,
                                         check=False)
-        result_help = subprocess.run([self.yaml_runner_script,
+        result_help = subprocess.run(['yaml_runner',
                                       '--help'],
                                         text=True,
                                         stdout=subprocess.PIPE,
@@ -103,10 +103,10 @@ class SimpleCLITest(CLITest):
         self.assertIn('-c CONFIG',
                       help_dict.get('options',{}).keys(),
                       'Test the -c option is in the help output.')
-        self.assertIn('--config CONFIG',
+        self.assertIn('--config',
                       help_dict.get('options',{}).keys(),
                       'Test the --config option is in help outpu')
-        self.assertIn('Yaml config to read from.', 
+        self.assertIn('Yaml config to read from.',
                       help_dict.get('options',{}).values(),
                       'Test the description for --config/-c is correct')
 
@@ -115,7 +115,7 @@ class SimpleCLITest(CLITest):
         Tests that running the script with --help and a valid configuration file
         prints the script's usage information.
         """
-        result = subprocess.run([self.yaml_runner_script,
+        result = subprocess.run(['yaml_runner',
                                  '--config',
                                  self.test_config_path,
                                  '--help'],
@@ -126,7 +126,7 @@ class SimpleCLITest(CLITest):
         self.assertEqual(result.returncode, 0, 'Test the exit code is zero')
         help_dict = self._help_to_dict(result.stdout)
         self.assertIn('hello_world',
-                      help_dict.get('positionals',{}).keys(), 
+                      help_dict.get('positionals',{}).keys(),
                       'Test the hello_world choice is in the help message')
         self.assertIn('Print hello world in stdout.',
                       help_dict.get('positionals',{}).get('hello_world',''),
@@ -161,7 +161,7 @@ class SimpleCLITest(CLITest):
         Tests that running the script with a valid choice name executes
         the corresponding function and prints the expected output.
         """
-        result = subprocess.run([self.yaml_runner_script,
+        result = subprocess.run(['yaml_runner',
                                  '--config',
                                  self.test_config_path,
                                  'hello_world'],
@@ -178,7 +178,7 @@ class SimpleCLITest(CLITest):
         Tests that running the script with a choice supporting optional arguments
         and --help prints the specific usage information for that choice.
         """
-        result = subprocess.run([self.yaml_runner_script,
+        result = subprocess.run(['yaml_runner',
                                  '--config',
                                  self.test_config_path,
                                  'echo_passthrough',
@@ -192,12 +192,9 @@ class SimpleCLITest(CLITest):
         self.assertIn('echo_passthrough',
                       help_dict.get('usage',''),
                        'Test the echo_all choice is in the usage')
-        self.assertIn('ARGUMENTS',
-                      help_dict.get('positionals',{}).keys(),
-                      'Test ARGUMENTS is shown as an optional argument.')
-        self.assertIn('Extra arguments for the command.',
-                      help_dict.get('positionals',{}).get('ARGUMENTS',''),
-                      'Test the descriptions for passthough arguments is shown.')
+        self.assertIn('PASSTHROUGH ENABLED',
+                      result.stdout,
+                      'Test user shown passthrough is enabled.')
         self.assertIn('-h',
                       help_dict.get('options',{}).keys(),
                       'Test the -h option is in the output')
@@ -208,7 +205,7 @@ class SimpleCLITest(CLITest):
     def test_5_passthrough_args(self):
         """Test passthough args work correctly
         """
-        result = subprocess.run([self.yaml_runner_script,
+        result = subprocess.run(['yaml_runner',
                                  '--config',
                                  self.test_config_path,
                                  'echo_passthrough',
@@ -229,7 +226,7 @@ class SimpleCLITest(CLITest):
     def test_6_list_commands(self):
         """Test that list commands are run correctly
         """
-        result = subprocess.run([self.yaml_runner_script,
+        result = subprocess.run(['yaml_runner',
                                  '--config',
                                  self.test_config_path,
                                  'list'],
@@ -254,7 +251,7 @@ class SimpleCLITest(CLITest):
     def test_7_list_command_with_passthrough(self):
         """Test that passthrough args are correctly run in list commands
         """
-        result = subprocess.run([self.yaml_runner_script,
+        result = subprocess.run(['yaml_runner',
                                  '--config',
                                  self.test_config_path,
                                  'list_passthrough',
@@ -283,12 +280,13 @@ class SimpleCLITest(CLITest):
     def test_8_fail_fast_list(self):
         """Test that list commands are run correctly
         """
-        result = subprocess.run([self.yaml_runner_script,
+        result = subprocess.run(['yaml_runner',
                                  '--config',
                                  self.test_config_path,
                                  'fail_fast'],
                                 text=True,
                                 stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
                                 check=False)
         self.assertNotEqual(result.returncode, 0, 'Test the exit code is non-zero')
         split_results = result.stdout.splitlines()

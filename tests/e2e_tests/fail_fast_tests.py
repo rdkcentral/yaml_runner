@@ -48,13 +48,13 @@ MY_DIR = path.dirname(MY_PATH)
 
 class FailFastCLITest(CLITest):
     """Test class for the yaml_runner script."""
-    test_config_path = path.join(MY_DIR, '../examples/fail_fast_config.yml')
+    test_config_path = path.join(MY_DIR, 'fixtures/fail_fast_config.yml')
 
     def test_1_check_list_command(self):
         """
         Test all commands are run from a command list in the config.
         """
-        result = subprocess.run([self.yaml_runner_script,
+        result = subprocess.run(['yaml_runner',
                                               '-c',
                                               self.test_config_path,
                                               'list'],
@@ -82,7 +82,7 @@ class FailFastCLITest(CLITest):
         Check that the list of commands continue to run after a failure,
         with the fail_fast option set to false.
         """
-        result = subprocess.run([self.yaml_runner_script,
+        result = subprocess.run(['yaml_runner',
                                               '-c',
                                               self.test_config_path,
                                               'list_failure'],
